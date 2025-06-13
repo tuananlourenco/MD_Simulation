@@ -15,7 +15,7 @@ nstcgsteep               = 1000
 comm-mode                = Linear
 ; number of steps for center of mass motion removal
 nstcomm                  = 100
-nstcalcenergy            = -1
+nstcalcenergy            = 
 
 ; OUTPUT CONTROL OPTIONS
 ; Output frequency for coords (x), velocities (v) and forces (f)
