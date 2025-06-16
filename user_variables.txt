@@ -1,0 +1,343 @@
+[general]
+system = C2MIM-TF2N-NEAT
+molecule1 = c2mim
+molecule2 = tf2n
+molecule3 = 
+N_molecule1 = 500
+N_molecule2 = 500
+N_molecule3 = 
+system_size = 500pares
+Salt_concentration = Neat
+software           = GROMACS
+ff                 = CLP
+T_target           = 400K
+overleaf_name      = Meeting
+start_year         = 2025
+nmols              = 2
+boxside            = 0.0 0.0 0.0 64.0 64.0 64.0
+
+[MD_General]
+rlist	  = 1.4
+rcoulomb  = 1.4
+rvdw	  = 1.4
+
+
+[energy minimization]
+;Integrator and main options
+integrator          = steep
+emtol               = 10
+emstep              = 0.01
+tinit                    = 0
+dt                       = 0.001
+nsteps                   = 500000
+;Temperature
+tcoupl                   = no
+tau-t                    = 0.1
+ref-t                    = 600
+gen-vel                  = no
+gen-temp                 = 600
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic)
+annealing                = no
+; Number of time points to use for specifying annealing in each group
+annealing_npoints        = 6
+; List of times at the annealing points for each group
+annealing_time           = 0  1000 1500 2500 3000 10000
+; Temp. at each annealing point, for each group.
+annealing_temp           = 600 600 500 500 400 400
+;Pressure
+Pcoupl                   = no
+tau-p                    = 1.0
+compressibility          = 4.5e-5
+ref-p                    = 1.0
+;nsttcouple               = 2
+;Output
+nstxout                  = 00
+nstvout                  = 00
+nstfout                  = 00
+nstlog                   = 300
+nstenergy                = 300
+nstxout-compressed       = 1000
+xtc-precision            = 1000
+;nstcalcenergy            = 100
+; OPTIONS FOR BONDS
+continuation             = no
+constraints              = hbonds
+; Type of constraint algorithm
+constraint-algorithm     = LINCS
+; Highest order in the expansion of the constraint coupling matrix
+lincs-order              = 4
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
+lincs-iter               = 4
+; Lincs will write a warning to the stderr if in one step a bond
+; rotates over more degrees than
+lincs-warnangle          = 45
+; Convert harmonic bonds to morse potentials
+morse                    = no
+;CUTOFFS
+rlist     = 1.4
+rcoulomb  = 1.4
+rvdw      = 1.4
+
+
+
+[nvt 2 stage]
+;Integrator and main options
+integrator               = md
+emtol                    = 10
+emstep                   = 0.01
+tinit                    = 0
+dt                       = 0.001
+nsteps                   = 1000000 
+;Temperature
+tcoupl                   = v-rescale
+tau-t                    = 0.1
+ref-t                    = 600
+gen-vel                  = yes
+gen-temp                 = 600
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic)
+annealing                = no
+; Number of time points to use for specifying annealing in each group
+annealing_npoints        = 6
+; List of times at the annealing points for each group
+annealing_time           = 0  1000 1500 2500 3000 10000
+; Temp. at each annealing point, for each group.
+annealing_temp           = 600 600 500 500 400 400
+;Pressure
+Pcoupl                   = no
+tau-p                    = 1.0
+compressibility          = 4.5e-5
+ref-p                    = 1.0
+;nsttcouple               = 2
+;Output
+nstxout                  = 00
+nstvout                  = 00
+nstfout                  = 00
+nstlog                   = 500
+nstenergy                = 500
+nstxout-compressed       = 1000
+xtc-precision            = 500
+;nstcalcenergy            = 100
+; OPTIONS FOR BONDS
+continuation             = no
+constraints              = hbonds
+; Type of constraint algorithm
+constraint-algorithm     = LINCS
+; Highest order in the expansion of the constraint coupling matrix
+lincs-order              = 4
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
+lincs-iter               = 1
+; Lincs will write a warning to the stderr if in one step a bond
+; rotates over more degrees than
+lincs-warnangle          = 45
+; Convert harmonic bonds to morse potentials
+morse                    = no
+;CUTOFFS
+rlist     = 1.4
+rcoulomb  = 1.4
+rvdw      = 1.4
+#Information for directory name
+T-initial                = 600
+
+
+[npt stage 2]
+;Integrator and main options
+integrator               = md
+emtol                    = 10
+emstep                   = 0.01
+tinit                    = 0
+dt                       = 0.001
+nsteps                   = 20000000
+;Temperature
+tcoupl                   = v-rescale
+tau-t                    = 0.1
+ref-t                    = 600
+gen-vel                  = no
+gen-temp                 = 600
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic)
+annealing                = single
+; Number of time points to use for specifying annealing in each group
+annealing_npoints        = 10
+; List of times at the annealing points for each group
+annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
+; Temp. at each annealing point, for each group.
+annealing_temp           = 600 500  500  400  400   600   500   500   400   400
+;Pressure
+Pcoupl                   = C-rescale
+tau-p                    = 1.0
+compressibility          = 4.5e-5
+ref-p                    = 1.0
+;nsttcouple               = 2
+;Output
+nstxout                  = 00
+nstvout                  = 00
+nstfout                  = 00
+nstlog                   = 1000
+nstenergy                = 1000
+nstxout-compressed       = 1000
+xtc-precision            = 1000
+;nstcalcenergy            = 100
+; OPTIONS FOR BONDS
+continuation             = yes
+constraints              = hbonds
+; Type of constraint algorithm
+constraint-algorithm     = LINCS
+; Highest order in the expansion of the constraint coupling matrix
+lincs-order              = 4
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
+lincs-iter               = 1
+; Lincs will write a warning to the stderr if in one step a bond
+; rotates over more degrees than
+lincs-warnangle          = 45
+; Convert harmonic bonds to morse potentials
+morse                    = no
+;CUTOFFS
+rlist     = 1.4
+rcoulomb  = 1.4
+rvdw      = 1.4
+#Information for directory name
+T-initial                = 600
+T-final                  = 400
+
+[npt stage 3]
+;Integrator and main options
+integrator               = md
+emtol                    = 10
+emstep                   = 0.01
+tinit                    = 0
+dt                       = 0.001
+nsteps                   = 20000000
+;Temperature
+tcoupl                   = nose-hoover
+tau-t                    = 0.1
+ref-t                    = 400
+gen-vel                  = no
+gen-temp                 = 600
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic)
+annealing                = no
+; Number of time points to use for specifying annealing in each group
+annealing_npoints        = 6
+; List of times at the annealing points for each group
+annealing_time           = 0  1000 1500 2500 3000 10000
+; Temp. at each annealing point, for each group.
+annealing_temp           = 600 600 500 500 400 400
+;Pressure
+Pcoupl                   = Parrinello-Rahman
+tau-p                    = 5.0
+compressibility          = 4.5e-5
+ref-p                    = 1.0
+;nsttcouple               = 2
+;Output
+nstxout                  = 00
+nstvout                  = 00
+nstfout                  = 00
+nstlog                   = 500
+nstenergy                = 500
+nstxout-compressed       = 500
+xtc-precision            = 1000
+;nstcalcenergy            = 100
+; OPTIONS FOR BONDS
+continuation             = yes
+constraints              = hbonds
+; Type of constraint algorithm
+constraint-algorithm     = LINCS
+; Highest order in the expansion of the constraint coupling matrix
+lincs-order              = 4
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
+lincs-iter               = 1
+; Lincs will write a warning to the stderr if in one step a bond
+; rotates over more degrees than
+lincs-warnangle          = 45
+; Convert harmonic bonds to morse potentials
+morse                    = no
+;CUTOFFS
+rlist     = 1.4
+rcoulomb  = 1.4
+rvdw      = 1.4
+#Information for directory name
+T-initial                = 400
+
+[nvt stage 4]
+;Integrator and main options
+integrator               = md
+emtol                    = 10
+emstep                   = 0.01
+tinit                    = 0
+dt                       = 0.001
+nsteps                   = 50000000
+;Temperature
+tcoupl                   = nose-hoover
+tau-t                    = 0.1
+ref-t                    = 600
+gen-vel                  = no
+gen-temp                 = 600
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic)
+annealing                = no
+; Number of time points to use for specifying annealing in each group
+annealing_npoints        = 6
+; List of times at the annealing points for each group
+annealing_time           = 0  1000 1500 2500 3000 10000
+; Temp. at each annealing point, for each group.
+annealing_temp           = 600 600 500 500 400 400
+;Pressure
+Pcoupl                   = no
+tau-p                    = 1.0
+compressibility          = 4.5e-5
+ref-p                    = 1.0
+;nsttcouple               = 2
+;Output
+nstxout                  = 00
+nstvout                  = 00
+nstfout                  = 00
+nstlog                   = 300
+nstenergy                = 300
+nstxout-compressed       = 300
+xtc-precision            = 1000
+;nstcalcenergy            = 100
+; OPTIONS FOR BONDS
+continuation             = yes
+constraints              = hbonds
+; Type of constraint algorithm
+constraint-algorithm     = LINCS
+; Highest order in the expansion of the constraint coupling matrix
+lincs-order              = 4
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
+lincs-iter               = 1
+; Lincs will write a warning to the stderr if in one step a bond
+; rotates over more degrees than
+lincs-warnangle          = 45
+; Convert harmonic bonds to morse potentials
+morse                    = no
+;CUTOFFS
+rlist     = 1.4
+rcoulomb  = 1.4
+rvdw      = 1.4
+#Information for directory name
+T-initial                = 400
+
+[paths]
+#Place were you have your original ITPs
+Original_FF_Folder      = /home/tuanan/drive/WORK/POSDOC/GROMACS_QTNano/Meeting_June_16/Force_Field_Project
+Original_PDB_Folder     = /home/tuanan/drive/WORK/POSDOC/GROMACS_QTNano/Meeting_June_16/PDB_Project
+
+[packmol]
+packmol_instructions = 
+  structure moleculeN
+     number N_moleculeN
+     inside box boxside
+  end structure
+
