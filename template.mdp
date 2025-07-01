@@ -65,8 +65,8 @@ tc-grps                  = System ;
 ; Time constant (ps) and reference temperature (K)
 tau-t                    =  
 ref-t                    = 
+pcoupl                   =                               
 ; Pressure coupling     
-Pcoupl                   =  
 Pcoupltype               = Isotropic
 ; Time constant (ps), compressibility (1/bar) and reference P (bar)
 tau-p                    =  
