@@ -15,7 +15,7 @@ nstcgsteep               = 1000
 comm-mode                = Linear
 ; number of steps for center of mass motion removal
 nstcomm                  = 100
-nstcalcenergy            = 
+;nstcalcenergy            = 
 
 ; OUTPUT CONTROL OPTIONS
 ; Output frequency for coords (x), velocities (v) and forces (f)
@@ -72,7 +72,7 @@ Pcoupltype               = Isotropic
 tau-p                    =  
 compressibility          = 
 ref-p                    = 
-nsttcouple               = 
+;nsttcouple               = 
 
 ; SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
