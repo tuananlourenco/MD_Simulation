@@ -1,26 +1,30 @@
 [general]
-system = C2MIM-TF2N-NEAT
-molecule1 = c2mim
-molecule2 = tf2n
-molecule3 = 
-N_molecule1 = 500
-N_molecule2 = 500
-N_molecule3 = 
-system_size = 500pares
-Salt_concentration = Neat
+;Number of type of species
+N#_species_type     = 2
+;name of each specie
+specie1_name = c2mim
+specie2_name = tf2n
+specie3_name =
+specie4_name =
+specie5_name = 
+;ammount of each specie in the MD
+specie1_ammount = 
+specie2_ammount = 
+specie3_ammount =
+specie4_ammount =
+specie5_ammount = 
 software           = GROMACS
 ff                 = CLP
-T_target           = 400K
+T_production           = 400K
 overleaf_name      = Meeting
 start_year         = 2025
-nmols              = 2
+;box side in the initial pdb from PACKMOL obtained by volume guesser
 boxside            = 0.0 0.0 0.0 64.0 64.0 64.0
 
 [MD_General]
 rlist	  = 1.4
 rcoulomb  = 1.4
 rvdw	  = 1.4
-
 
 [energy minimization]
 ;Integrator and main options
