@@ -1,25 +1,25 @@
 [general]
 ;Number of type of species
-N#_species_type     = 3
+N#_species_type     = 2
 ;name of each specie
 specie1_name = c2mim
 specie2_name = tf2n
-specie3_name = sodium
+specie3_name = 
 specie4_name =
 specie5_name = 
 ;ammount of each specie in the MD
-specie1_ammount = 200
-specie2_ammount = 300
-specie3_ammount = 100
+specie1_ammount = 500
+specie2_ammount = 500
+specie3_ammount = 
 specie4_ammount =
 specie5_ammount = 
 software           = GROMACS
 ff                 = CLP
-T_production           = 600K
+T_production           = 400K
 overleaf_name      = Meeting
 start_year         = 2025
 ;box side in the initial pdb from PACKMOL obtained by volume guesser
-boxside            = 0.0 0.0 0.0 64.0 64.0 64.0
+boxside            = 0.0 0.0 0.0 55.0 55.0 55.0
 
 [MD_General]
 rlist	  = 1.4 {nm}
@@ -29,7 +29,7 @@ rvdw	  = 1.4 {nm}
 [1-min]
 ;Integrator and main options
 integrator          = steep
-emtol               = 10 {kJ mol^-1 nm^-1]}
+emtol               = 1000 {kJ mol^-1 nm^-1]}
 emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
@@ -58,19 +58,19 @@ ref-p                    = 1.0 {bar}
 nstxout                  = 00
 nstvout                  = 00
 nstfout                  = 00
-nstlog                   = 1000
-nstenergy                = 1000
+nstlog                   = 500
+nstenergy                = 500
 nstxout-compressed       = 1000
 xtc-precision            = 1000
 ;nstcalcenergy            = 100
 ;
 OPTIONS FOR BONDS
 continuation             = no
-constraints              = none
+constraints              = h-bonds
 ; Type of constraint algorithm
 constraint-algorithm     = LINCS
 ; Highest order in the expansion of the constraint coupling matrix
-lincs-order              = 4
+lincs-order              = 8
 ; Number of iterations in the final step of LINCS. 1 is fine for
 ; normal simulations, but use 2 to conserve energy in NVE runs.
 ; For energy minimization with constraints it should be 4 to 8.
@@ -81,8 +81,8 @@ lincs-warnangle          = 45
 ; Convert harmonic bonds to morse potentials
 morse                    = no
 #Information for directory name
-T-initial                = 600 {K}
-T-final                  = 400 {K}
+T-initial                = 0 {K}
+T-final                  = 0 {K}
 
 [2-NVT_thermalization]
 ;Integrator and main options
@@ -91,16 +91,16 @@ emtol                    = 10 {kJ mol-1 nm-1]}
 emstep                   = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 20000000
+nsteps                   = 4000000
 ;Temperature
 tcoupl                   = v-rescale
 tau-t                    = 0.1 {ps}
-ref-t                    = 600 {K}
+ref-t                    = 700 {K}
 gen-vel                  = yes
-gen-temp                 = 600 {K}
+gen-temp                 = 700 {K}
 ; SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
-annealing                = single
+annealing                = no
 ; Number of time points to use for specifying annealing in each group
 annealing_npoints        = 10
 ; List of times at the annealing points for each group
@@ -123,8 +123,8 @@ xtc-precision            = 1000
 ;nstcalcenergy            = 100
 ;
 OPTIONS FOR BONDS
-continuation             = yes
-constraints              = hbonds
+continuation             = no
+constraints              = h-bonds
 ; Type of constraint algorithm
 constraint-algorithm     = LINCS
 ; Highest order in the expansion of the constraint coupling matrix
@@ -139,8 +139,8 @@ lincs-warnangle          = 45
 ; Convert harmonic bonds to morse potentials
 morse                    = no
 #Information for directory name
-T-initial                = 600
-T-final                  = 400
+T-initial                = 700 {K}
+T-final                  = 700 {K}
 
 [3-NPT_ergodicity]
 ;Integrator and main options
@@ -149,13 +149,13 @@ emtol                    = 10 {kJ mol-1 nm-1]}
 emstep                   = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 20000000
+nsteps                   = 21000000
 ;Temperature
 tcoupl                   = v-rescale
 tau-t                    = 0.1 {ps}
-ref-t                    = 600 {K}
+ref-t                    = 700 {K}
 gen-vel                  = no
-gen-temp                 = 600 {K}
+gen-temp                 = 700 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
@@ -168,26 +168,26 @@ List of times at the annealing points for each group
 annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
 ;
 Temp. at each annealing point, for each group.
-annealing_temp           = 600 500  500  400  400   600   500   500   400   400
+annealing_temp           = 700 500  500  400  400   600   500   500   400   400
 ;Pressure
 pcoupl                   = C-rescale
 tau-p                    = 1.0 {ps}
 compressibility          = 4.5e-5 {bar^-1}
-ref-p                    = 1.0 {bar}
+ref-p                    = 1.01325 {bar}
 ;nsttcouple               = 2
 ;Output
 nstxout                  = 00
 nstvout                  = 00
 nstfout                  = 00
-nstlog                   = 1000
-nstenergy                = 1000
-nstxout-compressed       = 1000
+nstlog                   = 500
+nstenergy                = 500
+nstxout-compressed       = 500
 xtc-precision            = 1000
 ;nstcalcenergy            = 100
 ;
 OPTIONS FOR BONDS
 continuation             = yes
-constraints              = hbonds
+constraints              = h-bonds
 ;
 Type of constraint algorithm
 constraint-algorithm     = LINCS
@@ -224,13 +224,13 @@ nsteps                   = 20000000
 ;Temperature
 tcoupl                   = nose-hoover
 tau-t                    = 0.1 {ps}
-ref-t                    = 600 {K}
+ref-t                    = 400 {K}
 gen-vel                  = no
-gen-temp                 = 600 {K}
+gen-temp                 = 400 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
-annealing                = single
+annealing                = no
 ;
 Number of time points to use for specifying annealing in each group
 annealing_npoints        = 10
@@ -244,21 +244,21 @@ annealing_temp           = 600 500  500  400  400   600   500   500   400   400
 pcoupl                   = Parrinello-Rahman
 tau-p                    = 5.0 {ps}
 compressibility          = 4.5e-5 {bar^-1}
-ref-p                    = 1.0 {bar}
+ref-p                    = 1.01325 {bar}
 ;nsttcouple               = 2
 ;Output
 nstxout                  = 00
 nstvout                  = 00
 nstfout                  = 00
-nstlog                   = 1000
-nstenergy                = 1000
+nstlog                   = 500
+nstenergy                = 500
 nstxout-compressed       = 1000
-xtc-precision            = 1000
+xtc-precision            = 500
 ;nstcalcenergy            = 100
 ;
 OPTIONS FOR BONDS
 continuation             = yes
-constraints              = hbonds
+constraints              = h-bonds
 ;
 Type of constraint algorithm
 constraint-algorithm     = LINCS
@@ -281,7 +281,7 @@ lincs-warnangle          = 45
 Convert harmonic bonds to morse potentials
 morse                    = no
 #Information for directory name
-T-initial                = 600
+T-initial                = 400
 T-final                  = 400
 
 [6-NVT_re-equilibrium]
@@ -291,17 +291,17 @@ emtol                    = 10 {kJ mol-1 nm-1]}
 emstep                   = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 20000000
+nsteps                   = 5000000
 ;Temperature
 tcoupl                   = nose-hoover
 tau-t                    = 0.1 {ps}
-ref-t                    = 600 {K}
+ref-t                    = 400 {K}
 gen-vel                  = no
-gen-temp                 = 600 {K}
+gen-temp                 = 400 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
-annealing                = single
+annealing                = no
 ;
 Number of time points to use for specifying annealing in each group
 annealing_npoints        = 10
@@ -321,15 +321,15 @@ ref-p                    = 1.0 {bar}
 nstxout                  = 00
 nstvout                  = 00
 nstfout                  = 00
-nstlog                   = 1000
-nstenergy                = 1000
+nstlog                   = 500
+nstenergy                = 500
 nstxout-compressed       = 1000
-xtc-precision            = 1000
+xtc-precision            = 500
 ;nstcalcenergy            = 100
 ;
 OPTIONS FOR BONDS
 continuation             = yes
-constraints              = hbonds
+constraints              = h-bonds
 ;
 Type of constraint algorithm
 constraint-algorithm     = LINCS
@@ -352,7 +352,7 @@ lincs-warnangle          = 45
 Convert harmonic bonds to morse potentials
 morse                    = no
 #Information for directory name
-T-initial                = 600 {K}
+T-initial                = 400 {K}
 T-final                  = 400 {K}
 
 [7-NVT_production]
@@ -362,17 +362,17 @@ emtol                    = 10 {kJ mol-1 nm-1]}
 emstep                   = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 20000000
+nsteps                   = 82000000
 ;Temperature
 tcoupl                   = nose-hoover
 tau-t                    = 0.1 {ps}
-ref-t                    = 600 {K}
+ref-t                    = 400 {K}
 gen-vel                  = no
-gen-temp                 = 600 {K}
+gen-temp                 = 400 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
-annealing                = single
+annealing                = no
 ;
 Number of time points to use for specifying annealing in each group
 annealing_npoints        = 10
@@ -392,15 +392,15 @@ ref-p                    = 1.0 {bar}
 nstxout                  = 00
 nstvout                  = 00
 nstfout                  = 00
-nstlog                   = 1000
-nstenergy                = 1000
-nstxout-compressed       = 1000
+nstlog                   = 300
+nstenergy                = 300
+nstxout-compressed       = 300
 xtc-precision            = 1000
 ;nstcalcenergy            = 100
 ;
 OPTIONS FOR BONDS
 continuation             = yes
-constraints              = hbonds
+constraints              = h-bonds
 ;
 Type of constraint algorithm
 constraint-algorithm     = LINCS
@@ -423,17 +423,17 @@ lincs-warnangle          = 45
 Convert harmonic bonds to morse potentials
 morse                    = no
 #Information for directory name
-T-initial                = 600 {K}
+T-initial                = 400 {K}
 T-final                  = 400 {K}
 
 [PBS_job]
-queue = Q20c 
+queue = Q96c 
 walltime = 48:00:00
-jobname = JOB
-n_cores = 20
-n_openmp = 2
+jobname = TESTE
+n_cores = 96
+n_openmp = 1
 
 [paths]
 #Place were you have your PDB files, remember that name MUST BE the same as the molecules names in this file
-Original_PDB_Folder     = /home/tuanan/drive/WORK/POSDOC/GROMACS_QTNano/Meeting_June_16/Force_Field_Project
+Original_PDB_Folder     = /home/tuanan/teste/PDB
 
