@@ -1,45 +1,45 @@
 [general]
 ;Number of type of species
-N#_species_type     = 2
+N#_species_type     = 3
 ;name of each specie
 specie1_name = c2mim
 specie2_name = tf2n
-specie3_name =
+specie3_name = sodium
 specie4_name =
 specie5_name = 
 ;ammount of each specie in the MD
-specie1_ammount = 
-specie2_ammount = 
-specie3_ammount =
+specie1_ammount = 200
+specie2_ammount = 300
+specie3_ammount = 100
 specie4_ammount =
 specie5_ammount = 
 software           = GROMACS
 ff                 = CLP
-T_production           = 400K
+T_production           = 600K
 overleaf_name      = Meeting
 start_year         = 2025
 ;box side in the initial pdb from PACKMOL obtained by volume guesser
 boxside            = 0.0 0.0 0.0 64.0 64.0 64.0
 
 [MD_General]
-rlist	  = 1.4
-rcoulomb  = 1.4
-rvdw	  = 1.4
+rlist	  = 1.4 {nm}
+rcoulomb  = 1.4 {nm}
+rvdw	  = 1.4 {nm}
 
-[energy minimization]
+[1-min]
 ;Integrator and main options
 integrator          = steep
-emtol               = 10
-emstep              = 0.01
+emtol               = 10 {kJ mol^-1 nm^-1]}
+emstep              = 0.01 {nm}
 tinit                    = 0
-dt                       = 0.001
-nsteps                   = 500000
+dt                       = 0.001 {ps}
+nsteps                   = 500000 
 ;Temperature
 tcoupl                   = no
-tau-t                    = 0.1
-ref-t                    = 600
+tau-t                    = 0.1 {ps}
+ref-t                    = 600 {K}
 gen-vel                  = no
-gen-temp                 = 600
+gen-temp                 = 600 {K}
 ; SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
 annealing                = no
@@ -51,9 +51,9 @@ annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 2100
 annealing_temp           = 600 500  500  400  400   600   500   500   400   400
 ;Pressure
 pcoupl                   = no
-tau-p                    = 0.5
-compressibility          = 4.5e-5
-ref-p                    = 1.0
+tau-p                    = 0.5 {ps}
+compressibility          = 4.5e-5 {bar^-1}
+ref-p                    = 1.0 {bar}
 ;Output
 nstxout                  = 00
 nstvout                  = 00
@@ -80,28 +80,24 @@ lincs-iter               = 1
 lincs-warnangle          = 45
 ; Convert harmonic bonds to morse potentials
 morse                    = no
-;CUTOFFS
-rlist     = 1.4
-rcoulomb  = 1.4
-rvdw      = 1.4
 #Information for directory name
-T-initial                = 600
-T-final                  = 400
+T-initial                = 600 {K}
+T-final                  = 400 {K}
 
-[nvt 2 stage]
+[2-NVT_thermalization]
 ;Integrator and main options
 integrator               = md
-emtol                    = 10
-emstep                   = 0.01
+emtol                    = 10 {kJ mol-1 nm-1]}
+emstep                   = 0.01 {nm}
 tinit                    = 0
-dt                       = 0.001
+dt                       = 0.001 {ps}
 nsteps                   = 20000000
 ;Temperature
 tcoupl                   = v-rescale
-tau-t                    = 0.1
-ref-t                    = 600
+tau-t                    = 0.1 {ps}
+ref-t                    = 600 {K}
 gen-vel                  = yes
-gen-temp                 = 600
+gen-temp                 = 600 {K}
 ; SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
 annealing                = single
@@ -113,9 +109,9 @@ annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 2100
 annealing_temp           = 600 500  500  400  400   600   500   500   400   400
 ;Pressure
 pcoupl                   = no
-tau-p                    = 0.5
-compressibility          = 4.5e-5
-ref-p                    = 1.0
+tau-p                    = 0.5 {ps}
+compressibility          = 4.5e-5 {bar^-1}
+ref-p                    = 1.0 {bar}
 ;Output
 nstxout                  = 00
 nstvout                  = 00
@@ -142,28 +138,24 @@ lincs-iter               = 1
 lincs-warnangle          = 45
 ; Convert harmonic bonds to morse potentials
 morse                    = no
-;CUTOFFS
-rlist     = 1.4
-rcoulomb  = 1.4
-rvdw      = 1.4
 #Information for directory name
 T-initial                = 600
 T-final                  = 400
 
-[npt stage 3]
+[3-NPT_ergodicity]
 ;Integrator and main options
 integrator               = md
-emtol                    = 10
-emstep                   = 0.01
+emtol                    = 10 {kJ mol-1 nm-1]}
+emstep                   = 0.01 {nm}
 tinit                    = 0
-dt                       = 0.001
+dt                       = 0.001 {ps}
 nsteps                   = 20000000
 ;Temperature
 tcoupl                   = v-rescale
-tau-t                    = 0.1
-ref-t                    = 600
+tau-t                    = 0.1 {ps}
+ref-t                    = 600 {K}
 gen-vel                  = no
-gen-temp                 = 600
+gen-temp                 = 600 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
@@ -179,9 +171,9 @@ Temp. at each annealing point, for each group.
 annealing_temp           = 600 500  500  400  400   600   500   500   400   400
 ;Pressure
 pcoupl                   = C-rescale
-tau-p                    = 1.0
-compressibility          = 4.5e-5
-ref-p                    = 1.0
+tau-p                    = 1.0 {ps}
+compressibility          = 4.5e-5 {bar^-1}
+ref-p                    = 1.0 {bar}
 ;nsttcouple               = 2
 ;Output
 nstxout                  = 00
@@ -217,28 +209,24 @@ lincs-warnangle          = 45
 ;
 Convert harmonic bonds to morse potentials
 morse                    = no
-;CUTOFFS
-rlist     = 1.4
-rcoulomb  = 1.4
-rvdw      = 1.4
 #Information for directory name
-T-initial                = 600
-T-final                  = 400
+T-initial                = 600 {K}
+T-final                  = 400 {K}
 
-[npt stage 4]
+[4-NPT_equilibration]
 ;Integrator and main options
 integrator               = md
-emtol                    = 10
-emstep                   = 0.01
+emtol                    = 10 {kJ mol-1 nm-1]}
+emstep                   = 0.01 {nm}
 tinit                    = 0
-dt                       = 0.001
+dt                       = 0.001 {ps}
 nsteps                   = 20000000
 ;Temperature
 tcoupl                   = nose-hoover
-tau-t                    = 0.1
-ref-t                    = 600
+tau-t                    = 0.1 {ps}
+ref-t                    = 600 {K}
 gen-vel                  = no
-gen-temp                 = 600
+gen-temp                 = 600 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
@@ -254,9 +242,9 @@ Temp. at each annealing point, for each group.
 annealing_temp           = 600 500  500  400  400   600   500   500   400   400
 ;Pressure
 pcoupl                   = Parrinello-Rahman
-tau-p                    = 5.0
-compressibility          = 4.5e-5
-ref-p                    = 1.0
+tau-p                    = 5.0 {ps}
+compressibility          = 4.5e-5 {bar^-1}
+ref-p                    = 1.0 {bar}
 ;nsttcouple               = 2
 ;Output
 nstxout                  = 00
@@ -292,28 +280,24 @@ lincs-warnangle          = 45
 ;
 Convert harmonic bonds to morse potentials
 morse                    = no
-;CUTOFFS
-rlist     = 1.4
-rcoulomb  = 1.4
-rvdw      = 1.4
 #Information for directory name
 T-initial                = 600
 T-final                  = 400
 
-[nvt stage 5]
+[6-NVT_re-equilibrium]
 ;Integrator and main options
 integrator               = md
-emtol                    = 10
-emstep                   = 0.01
+emtol                    = 10 {kJ mol-1 nm-1]}
+emstep                   = 0.01 {nm}
 tinit                    = 0
-dt                       = 0.001
+dt                       = 0.001 {ps}
 nsteps                   = 20000000
 ;Temperature
 tcoupl                   = nose-hoover
-tau-t                    = 0.1
-ref-t                    = 600
+tau-t                    = 0.1 {ps}
+ref-t                    = 600 {K}
 gen-vel                  = no
-gen-temp                 = 600
+gen-temp                 = 600 {K}
 ;
 SIMULATED ANNEALING
 ; Type of annealing for each temperature group (no/single/periodic)
@@ -329,9 +313,9 @@ Temp. at each annealing point, for each group.
 annealing_temp           = 600 500  500  400  400   600   500   500   400   400
 ;Pressure
 pcoupl                   = no
-tau-p                    = 0.5
-compressibility          = 4.5e-5
-ref-p                    = 1.0
+tau-p                    = 0.5 {ps}
+compressibility          = 4.5e-5 {bar^-1}
+ref-p                    = 1.0 {bar}
 ;nsttcouple               = 2
 ;Output
 nstxout                  = 00
@@ -367,26 +351,89 @@ lincs-warnangle          = 45
 ;
 Convert harmonic bonds to morse potentials
 morse                    = no
-;CUTOFFS
-rlist     = 1.4
-rcoulomb  = 1.4
-rvdw      = 1.4
 #Information for directory name
-T-initial                = 600
-T-final                  = 400
+T-initial                = 600 {K}
+T-final                  = 400 {K}
+
+[7-NVT_production]
+;Integrator and main options
+integrator               = md
+emtol                    = 10 {kJ mol-1 nm-1]}
+emstep                   = 0.01 {nm}
+tinit                    = 0
+dt                       = 0.001 {ps}
+nsteps                   = 20000000
+;Temperature
+tcoupl                   = nose-hoover
+tau-t                    = 0.1 {ps}
+ref-t                    = 600 {K}
+gen-vel                  = no
+gen-temp                 = 600 {K}
+;
+SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic)
+annealing                = single
+;
+Number of time points to use for specifying annealing in each group
+annealing_npoints        = 10
+;
+List of times at the annealing points for each group
+annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
+;
+Temp. at each annealing point, for each group.
+annealing_temp           = 600 500  500  400  400   600   500   500   400   400
+;Pressure
+pcoupl                   = no
+tau-p                    = 0.5 {ps}
+compressibility          = 4.5e-5 {bar^-1}
+ref-p                    = 1.0 {bar}
+;nsttcouple               = 2
+;Output
+nstxout                  = 00
+nstvout                  = 00
+nstfout                  = 00
+nstlog                   = 1000
+nstenergy                = 1000
+nstxout-compressed       = 1000
+xtc-precision            = 1000
+;nstcalcenergy            = 100
+;
+OPTIONS FOR BONDS
+continuation             = yes
+constraints              = hbonds
+;
+Type of constraint algorithm
+constraint-algorithm     = LINCS
+;
+Highest order in the expansion of the constraint coupling matrix
+lincs-order              = 4
+;
+Number of iterations in the final step of LINCS. 1 is fine for
+;
+normal simulations, but use 2 to conserve energy in NVE runs.
+;
+For energy minimization with constraints it should be 4 to 8.
+lincs-iter               = 1
+;
+Lincs will write a warning to the stderr if in one step a bond
+;
+rotates over more degrees than
+lincs-warnangle          = 45
+;
+Convert harmonic bonds to morse potentials
+morse                    = no
+#Information for directory name
+T-initial                = 600 {K}
+T-final                  = 400 {K}
+
+[PBS_job]
+queue = Q20c 
+walltime = 48:00:00
+jobname = JOB
+n_cores = 20
+n_openmp = 2
 
 [paths]
-#Place were you have your original ITPs
-Original_FF_Folder      = /home/tuanan/drive/WORK/POSDOC/GROMACS_QTNano/Meeting_June_16/Force_Field_Project
+#Place were you have your PDB files, remember that name MUST BE the same as the molecules names in this file
 Original_PDB_Folder     = /home/tuanan/drive/WORK/POSDOC/GROMACS_QTNano/Meeting_June_16/Force_Field_Project
-Original_ITP_Folder     = /home/tuanan/drive/WORK/POSDOC/GROMACS_QTNano/Meeting_June_16/Force_Field_Project
 
-[system_parameters]
-#Number of atoms, as read from the FF itp file or in a pre-step from the system.top
-Number_of_atoms    = 
-Box_Size           = 6.4 6.4 6.4
-
-[simulation_details]
-#Number of atoms, as read from the FF itp file or in a pre-step from the system.top
-T_initial          = 600
-T_final            = 400
