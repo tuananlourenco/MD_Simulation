@@ -638,7 +638,7 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
         jobname = config_data.get(pbs_section, 'jobname', fallback='gromacs_sim')
         queue = config_data.get(pbs_section, 'queue', fallback='default')
         walltime = config_data.get(pbs_section, 'walltime', fallback='24:00:00')
-        n_cores = int(config_data.get(pbs_section, 'n_cores', fallback=1))
+        ncpus = int(config_data.get(pbs_section, 'ncpus', fallback=1))
         n_openmp = int(config_data.get(pbs_section, 'n_openmp', fallback=1))
         
         # <<<<<< LENDO A NOVA VARIÁVEL AQUI >>>>>>
@@ -647,9 +647,9 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
 
 
         if n_openmp > 0:
-            n_mpi = n_cores // n_openmp
+            n_mpi = ncpus // n_openmp
         else:
-            n_mpi = n_cores
+            n_mpi = ncpus
 
         # Obter nsteps e dt para 4-NPT_equilibration e calcular half_nsteps em ps
         # O UnitStrippingConfigParser já remove as unidades, então 'dt' e 'nsteps' são lidos como strings limpas.
@@ -700,7 +700,7 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
 #PBS -e job.md.1.err
 #PBS -o job.md.1.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={n_cores}
+#PBS -l select=1:ncpus={ncpus}
 #PBS -l walltime={walltime}
 
 #EXPORT 
@@ -842,7 +842,7 @@ date >> ../JOB.md.1.out
 #PBS -e job.md.2.err
 #PBS -o job.md.2.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={n_cores}
+#PBS -l select=1:ncpus={ncpus}
 #PBS -l walltime={walltime}
 
 #EXPORT 
@@ -931,7 +931,7 @@ date >> ../JOB.md.2.out
 #PBS -e job.md.3.err
 #PBS -o job.md.3.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={n_cores}
+#PBS -l select=1:ncpus={ncpus}
 #PBS -l walltime={walltime}
 
 #EXPORT 
@@ -1015,7 +1015,7 @@ date >> ../JOB.md.3.out
 #PBS -e job.md.4.err
 #PBS -o job.md.4.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={n_cores}
+#PBS -l select=1:ncpus={ncpus}
 #PBS -l walltime={walltime}
 
 #EXPORT 
