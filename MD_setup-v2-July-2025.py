@@ -624,90 +624,7 @@ def create_notes_references_directory(main_sim_dir):
         print(f"Um erro inesperado ocorreu ao criar o diretório 'Notes_References': {e}")
         return False
 
-def copy_cpu_template_job(run_target_dir):
-    """
-    Copia o arquivo 'CPU-template.job' do repositório clonado para o
-    diretório de destino (o diretório RUN_*), renomeando-o para 'cpu.job'.
-
-    Args:
-        run_target_dir (str): O caminho para o diretório RUN_*.
-    Returns:
-        bool: True se a cópia foi bem-sucedida, False caso contrário.
-    """
-    if not run_target_dir:
-        print("Não foi possível copiar 'CPU-template.job': o diretório RUN_* não foi especificado.")
-        return False
-
-    md_simulation_repo_path = os.path.join(os.getcwd(), "MD_Simulation")
-    source_cpu_template_path = os.path.join(md_simulation_repo_path, "CPU-template.job")
-    output_cpu_job_path = os.path.join(run_target_dir, "cpu.job")
-
-    if not os.path.exists(source_cpu_template_path):
-        print(f"Erro: O arquivo 'CPU-template.job' não foi encontrado em '{source_cpu_template_path}'.")
-        print("Certifique-se de que o repositório 'MD_Simulation' foi clonado corretamente e o arquivo existe.")
-        return False
-
-    try:
-        shutil.copy2(source_cpu_template_path, output_cpu_job_path)
-        print(f"\nCopiado 'CPU-template.job' para '{output_cpu_job_path}' como 'cpu.job'.")
-        return True
-    except Exception as e:
-        print(f"Erro inesperado ao copiar o arquivo 'CPU-template.job': {e}")
-        return False
-
-def copy_pdb_files(config_data, destination_dir):
-    """
-    Copia arquivos .pdb das pastas de origem para o diretório de destino.
-    Os nomes dos arquivos .pdb são baseados em 'molecule1', 'molecule2', 'molecule3'.
-
-    Args:
-        config_data (configparser.ConfigParser): Objeto ConfigParser com as variáveis do usuário.
-        destination_dir (str): O caminho para o diretório de destino (e.g., min_steep_10_500000).
-    Returns:
-        bool: True se todos os arquivos foram processados (copiados ou avisados), False se houver um erro grave.
-    """
-    if 'paths' not in config_data:
-        print("Aviso: Seção '[Paths]' não encontrada em user_variables.txt. Pulando a cópia de arquivos PDB.")
-        return False
-
-    pdb_source_folder = config_data['paths'].get('original_pdb_folder', '').strip()
-    if not pdb_source_folder:
-        print("Aviso: 'Original_PDB_Folder' não está definido ou está vazio na seção [Paths]. Pulando a cópia de arquivos PDB.")
-        return False
-    
-    if not os.path.isdir(pdb_source_folder):
-        print(f"Erro: O diretório de origem PDB '{pdb_source_folder}' não existe ou não é um diretório válido. Verifique o caminho em user_variables.txt.")
-        return False
-
-    molecules = []
-    # Usar get com valor padrão para evitar KeyError se a variável não estiver presente
-    for i in range(1, 4): # Checa molecule1, molecule2, molecule3
-        mol_name = config_data['general'].get(f'molecule{i}', '').strip()
-        if mol_name:
-            molecules.append(mol_name)
-    
-    if not molecules:
-        print("Aviso: Nenhuma molécula (molecule1, molecule2, molecule3) definida na seção [General]. Nenhuns arquivos PDB para copiar.")
-        return False
-
-    print(f"\nCopiando arquivos .pdb de '{pdb_source_folder}' para '{destination_dir}'...")
-    all_copied = True
-    for mol in molecules:
-        source_pdb_path = os.path.join(pdb_source_folder, f"{mol}.pdb")
-        dest_pdb_path = os.path.join(destination_dir, f"{mol}.pdb")
-        if os.path.exists(source_pdb_path):
-            try:
-                shutil.copy2(source_pdb_path, dest_pdb_path) # copy2 preserva metadados
-                print(f"  Copiado: '{source_pdb_path}' para '{dest_pdb_path}'")
-            except Exception as e:
-                print(f"Erro ao copiar '{source_pdb_path}' para '{dest_pdb_path}': {e}")
-                all_copied = False
-        else:
-            print(f"Aviso: Arquivo PDB '{source_pdb_path}' para a molécula '{mol}' não encontrado. Pulando a cópia.")
-            all_copied = False
-    
-    return all_copied
-
+# Funções copy_cpu_template_job e copy_pdb_files foram removidas.
 
 def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, salt_concentration):
     """
@@ -716,18 +633,42 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
     print("\nGerando arquivos de submissão de job do PBS...")
 
     try:
-        # --- Parte 1: Ler variáveis do [PBS_job] ---
+        # --- Parte 1: Ler variáveis do [PBS_job] e topology_name ---
         pbs_section = 'PBS_job'
         jobname = config_data.get(pbs_section, 'jobname', fallback='gromacs_sim')
         queue = config_data.get(pbs_section, 'queue', fallback='default')
         walltime = config_data.get(pbs_section, 'walltime', fallback='24:00:00')
         n_cores = int(config_data.get(pbs_section, 'n_cores', fallback=1))
         n_openmp = int(config_data.get(pbs_section, 'n_openmp', fallback=1))
+        
+        # <<<<<< LENDO A NOVA VARIÁVEL AQUI >>>>>>
+        topology_name = config_data.get('general', 'topology_name', fallback='TOPOL.TOP')
+        print(f"Usando topology_name: {topology_name}")
+
 
         if n_openmp > 0:
             n_mpi = n_cores // n_openmp
         else:
             n_mpi = n_cores
+
+        # Obter nsteps e dt para 4-NPT_equilibration e calcular half_nsteps em ps
+        # O UnitStrippingConfigParser já remove as unidades, então 'dt' e 'nsteps' são lidos como strings limpas.
+        dt_npt4_raw = config_data.get('4-NPT_equilibration', 'dt', fallback='0')
+        nsteps_npt4_raw = config_data.get('4-NPT_equilibration', 'nsteps', fallback='0')
+        
+        try:
+            dt_npt4 = float(dt_npt4_raw)
+            nsteps_npt4 = int(nsteps_npt4_raw)
+            # Cálculo de half_nsteps_ps: (nsteps / 2) * dt
+            half_nsteps_ps_npt4 = (nsteps_npt4 / 2) * dt_npt4
+            # Formata para ter duas casas decimais, ou inteiro se for o caso
+            half_nsteps_ps_npt4_str = f"{half_nsteps_ps_npt4:.2f}".rstrip('0').rstrip('.') if '.' in str(half_nsteps_ps_npt4) else str(int(half_nsteps_ps_npt4))
+
+            print(f"Calculado half-nsteps para 4-NPT_equilibration: {half_nsteps_ps_npt4_str} ps")
+        except ValueError:
+            print("Aviso: 'dt' ou 'nsteps' para 4-NPT_equilibration não são números válidos. Usando '0' para half-nsteps.")
+            half_nsteps_ps_npt4_str = '0'
+
 
         # --- Parte 2: Recalcular nomes dinâmicos necessários ---
         packmol_output_pdb = f"box-{system_name}-{system_size}-species-{salt_concentration}.pdb"
@@ -738,7 +679,9 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
         nvt_dir_name = f"2-NVT_thermalization_integrator-{config_data.get('2-NVT_thermalization', 'integrator', fallback='NA')}_dt_{dt_nvt2}_time_{int(dt_nvt2 * nsteps_nvt2)}ps_T-{config_data.get('2-NVT_thermalization', 'ref-t', fallback='NA')}_{config_data.get('2-NVT_thermalization', 'tcoupl', fallback='NA')}"
 
         npt3_dir_name = f"3-NPT_ergodicity_integrator-{config_data.get('3-NPT_ergodicity', 'integrator', fallback='NA')}_dt_{float(config_data.get('3-NPT_ergodicity', 'dt', fallback=0))}_time_{int(float(config_data.get('3-NPT_ergodicity', 'dt', fallback=0)) * int(config_data.get('3-NPT_ergodicity', 'nsteps', fallback=0)))}ps_T-{config_data.get('3-NPT_ergodicity', 't-initial', fallback='NA')}-{config_data.get('3-NPT_ergodicity', 't-final', fallback='NA')}-K_P-{config_data.get('3-NPT_ergodicity', 'ref-p', fallback='NA')}-bar_{config_data.get('3-NPT_ergodicity', 'tcoupl', fallback='NA')}_{config_data.get('3-NPT_ergodicity', 'pcoupl', fallback='NA')}"
-        npt4_dir_name = f"4-NPT_equilibration_integrator-{config_data.get('4-NPT_equilibration', 'integrator', fallback='NA')}_dt_{float(config_data.get('4-NPT_equilibration', 'dt', fallback=0))}_time_{int(float(config_data.get('4-NPT_equilibration', 'dt', fallback=0)) * int(config_data.get('4-NPT_equilibration', 'nsteps', fallback=0)))}ps_T-{config_data.get('4-NPT_equilibration', 'ref-t', fallback='NA')}-K_P-{config_data.get('4-NPT_equilibration', 'ref-p', fallback='NA')}-bar_{config_data.get('4-NPT_equilibration', 'tcoupl', fallback='NA')}_{config_data.get('4-NPT_equilibration', 'pcoupl', fallback='NA')}"
+        # npt4_dir_name já foi definido em create_run_subdirectories_actual e usa nsteps_npt4 limpo
+        npt4_dir_name = f"4-NPT_equilibration_integrator-{config_data.get('4-NPT_equilibration', 'integrator', fallback='NA')}_dt_{dt_npt4_raw}_time_{int(float(dt_npt4_raw) * int(nsteps_npt4_raw))}ps_T-{config_data.get('4-NPT_equilibration', 'ref-t', fallback='NA')}-K_P-{config_data.get('4-NPT_equilibration', 'ref-p', fallback='NA')}-bar_{config_data.get('4-NPT_equilibration', 'tcoupl', fallback='NA')}_{config_data.get('4-NPT_equilibration', 'pcoupl', fallback='NA')}"
+
 
         nvt6_dir_name = ""
         section_nvt6 = '6-NVT_re-equilibrium'
@@ -751,6 +694,7 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
         # --- Bloco 3: Gerar e Salvar cada Jobfile ---
 
         # --- Job 1 ---
+        # ATENÇÃO: Substituído TOPOL.TOP por {topology_name}
         job1_template = f"""#!/bin/bash
 #PBS -N MD1-{jobname}
 #PBS -e job.md.1.err
@@ -804,7 +748,7 @@ echo "---------------------------------------------"
 
 cd {min_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/TOPOL.TOP -c ../../BOX/{packmol_output_pdb} -f ../../Protocol_input_files/1-min.mdp -o 1-min
+mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -c ../../BOX/{packmol_output_pdb} -f ../../Protocol_input_files/1-min.mdp -o 1-min
 
 mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 1-min -ntomp {n_openmp} > mdrun.out
 
@@ -830,7 +774,7 @@ cd ..
 
 cd {nvt_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/TOPOL.TOP -f ../../Protocol_input_files/2-NVT_thermalization.mdp -c ../{min_dir_name}/1-min.gro -o 2-NVT_thermalization
+mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/2-NVT_thermalization.mdp -c ../{min_dir_name}/1-min.gro -o 2-NVT_thermalization
 
 mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 2-NVT_thermalization -ntomp {n_openmp} > mdrun.out
 
@@ -858,7 +802,7 @@ cd ..
 
 cd {npt3_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/TOPOL.TOP -f ../../Protocol_input_files/3-NPT_ergodicity.mdp -c ../{nvt_dir_name}/2-NVT_thermalization.gro -o 3-NPT_ergodicity
+mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/3-NPT_ergodicity.mdp -c ../{nvt_dir_name}/2-NVT_thermalization.gro -o 3-NPT_ergodicity
 
 mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 3-NPT_ergodicity -ntomp {n_openmp} > mdrun.out
 
@@ -892,6 +836,7 @@ date >> ../JOB.md.1.out
         print(f"Arquivo de job 'job.md.1' gerado com sucesso em: '{output_path1}'")
 
         # --- Job 2 ---
+        # ATENÇÃO: Substituído TOPOL.TOP por {topology_name} e adicionado -b {half_nsteps_ps_npt4_str}
         job2_template = f"""#!/bin/bash
 #PBS -N MD2-{jobname}
 #PBS -e job.md.2.err
@@ -945,21 +890,21 @@ echo "---------------------------------------------"
 
 cd {npt4_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/TOPOL.TOP -f ../../Protocol_input_files/4-NPT_equilibration.mdp -c ../{npt3_dir_name}/3-NPT_ergodicity.gro -o 4-NPT_equilibration
+mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/4-NPT_equilibration.mdp -c ../{npt3_dir_name}/3-NPT_ergodicity.gro -o 4-NPT_equilibration
 
 mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 4-NPT_equilibration -ntomp {n_openmp} > mdrun.out
 
 ####################Cross-check section######################################################################## 
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 4-NPT_equilibration.edr -o 4-NPT_equilibration-potential-energy.xvg -xvg none > 4-NPT_equilibration-potential-energy.out
+mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str} -o 4-NPT_equilibration-potential-energy.xvg -xvg none > 4-NPT_equilibration-potential-energy.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 4-NPT_equilibration.edr -o 4-NPT_equilibration-total-energy.xvg -xvg none > 4-NPT_equilibration-total-energy.out
+mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str} -o 4-NPT_equilibration-total-energy.xvg -xvg none > 4-NPT_equilibration-total-energy.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 4-NPT_equilibration.edr -o 4-NPT_equilibration-temperature.xvg -xvg none > 4-NPT_equilibration-temperature.out
+mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str} -o 4-NPT_equilibration-temperature.xvg -xvg none > 4-NPT_equilibration-temperature.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Density' | gmx_mpi energy -f 4-NPT_equilibration.edr -o 4-NPT_equilibration-density.xvg -xvg none > 4-NPT_equilibration-density.out
+mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Density' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str} -o 4-NPT_equilibration-density.xvg -xvg none > 4-NPT_equilibration-density.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Volume' | gmx_mpi energy -f 4-NPT_equilibration.edr -o 4-NPT_equilibration-volume.xvg -xvg none > 4-NPT_equilibration-volume.out
+mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Volume' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str}  -o 4-NPT_equilibration-volume.xvg -xvg none > 4-NPT_equilibration-volume.out
 
 ####################Diretories Organization Section########################################################################
 
@@ -980,6 +925,7 @@ date >> ../JOB.md.2.out
 
         # --- Job 3 ---
         if nvt6_dir_name:
+            # ATENÇÃO: Substituído TOPOL.TOP por {topology_name}
             job3_template = f"""#!/bin/bash
 #PBS -N MD3-{jobname}
 #PBS -e job.md.3.err
@@ -1033,7 +979,7 @@ echo "---------------------------------------------"
 
 cd {nvt6_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/TOPOL.TOP -f ../../Protocol_input_files/6-NVT_re-equilibrium.mdp -c ../{npt4_dir_name}/4-NPT_equilibration.gro -o 6-NVT_re-equilibrium
+mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/6-NVT_re-equilibrium.mdp -c ../{npt4_dir_name}/4-NPT_equilibration.gro -o 6-NVT_re-equilibrium
 
 mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 6-NVT_re-equilibrium -ntomp {n_openmp} > mdrun.out
 
@@ -1063,6 +1009,7 @@ date >> ../JOB.md.3.out
             print(f"Arquivo de job 'job.md.3' gerado com sucesso em: '{output_path3}'")
 
             # --- Job 4 (aninhado, pois depende do Job 3) ---
+            # ATENÇÃO: Substituído TOPOL.TOP por {topology_name}
             job4_template = f"""#!/bin/bash
 #PBS -N MD4-{jobname}
 #PBS -e job.md.4.err
@@ -1116,7 +1063,7 @@ echo "---------------------------------------------"
 
 cd {nvt7_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/TOPOL.TOP -f ../../Protocol_input_files/7-NVT_production.mdp -c ../{nvt6_dir_name}/6-NVT_re-equilibrium.gro -o 7-NVT_production
+mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/7-NVT_production.mdp -c ../{nvt6_dir_name}/6-NVT_re-equilibrium.gro -o 7-NVT_production
 
 mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 7-NVT_production -ntomp {n_openmp} > mdrun.out
 
@@ -1484,8 +1431,6 @@ def main():
         print("Error: Failed to create the main simulation directory. Terminating.")
         return
 
-    # --- MUDANÇA PRINCIPAL AQUI ---
-    # Capturando as novas variáveis retornadas pela função
     min_dir_path, run_parent_dir, system, system_size, salt_concentration = create_subdirectories(main_simulation_directory, config_data)
 
     if min_dir_path is None or run_parent_dir is None:
@@ -1498,35 +1443,20 @@ def main():
     if not generate_mdp_files(main_simulation_directory, config_data):
         print("Warning: Some MDP files could not be generated.")
 
-    if not copy_cpu_template_job(run_parent_dir):
-        print("Warning: Failed to copy 'CPU-template.job'.")
-
-    if not copy_pdb_files(config_data, min_dir_path):
-        print("Warning: Some PDB files could not be copied.")
-
     box_dir = os.path.join(main_simulation_directory, "BOX")
     if not generate_packmol_input(config_data, system, system_size, salt_concentration, box_dir):
         print("Warning: Failed to generate the Packmol input file.")
 
     force_field_dir = os.path.join(main_simulation_directory, "Force_Field_input_files")
 
-    # Gerar os arquivos de submissão do PBS
     if not generate_pbs_jobs(config_data, run_parent_dir, system, system_size, salt_concentration):
         print("Warning: Failed to generate the PBS job files.")
 
-    # Gerar o log em LaTeX no final
     if not generate_latex_log(config_data, main_simulation_directory):
         print("Warning: Failed to generate the protocol log file in LaTeX format.")
 
     print("\nConfiguração inicial da simulação concluída. Verifique as mensagens acima para quaisquer avisos ou erros.")
 
-    if not generate_latex_log(config_data, main_simulation_directory):
-        print("Warning: Failed to generate the protocol log file in LaTeX format.")
-
-    print("\nInitial simulation setup completed. Check the messages above for any warnings or errors.")
-
-    # --- ADICIONAR ESTE BLOCO NO FINAL DA 'main' ---
-    # Executa o checklist interativo final antes de terminar.
     run_interactive_checklist()
     
     print("\nInitial simulation setup completed successfully.!")
@@ -1534,4 +1464,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
