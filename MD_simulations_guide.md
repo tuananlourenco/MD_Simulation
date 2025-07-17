@@ -50,7 +50,7 @@ In general we use OPLS-based force fields, such as the CL&P and the OPLS-2009IL.
 
 - [LIGPARGEN](https://zarbi.chem.yale.edu/ligpargen/) - Online website that uses your *pdb file to create gromacs *itp files based on default OPLS force field. Here you need to ensure that your *pdb file is relaxed using ab initio methods and also that the atom numbers in the output and input are the same. We recommed to use *gro or *pdb outputs from the LIGPARGEN when running your simulations. This choice should be used only as final option because the *itp create are more "complex" to understand.
 
-If you need to create *pdb files from scratch you need to remember to relax the structure using ab initio methods as recommeded in the force field papers.
+If you need to create *pdb files from scratch you need to remember to relax the structure using ab initio methods as recommeded in the force field papers. Also in almost all tools above you need to convert *xyz files to *pdb files, which in general we do using openbabel and create some changes in the atom names (openbabal only consider periodic table). Then, it helps to prevent problems if you ensure manually that both *itp/*top files and your final *pdb have the same atom-name or atomtype, this prevent the tons of warnings in the beggining of the simulation. Also, always draw the connections by yourself to check if everything is OK.
 
 ### Second step, initial MD boxes structures:
 
@@ -75,7 +75,7 @@ Keep in mind that general PACKMOL creates boxes that are not perfectly cubic, th
 
 Second, if PACKMOL find troubles to create your box, maybe you should use larger box sides. A good recommendation is to use the [**PACKMOL VOLUME GUESSER**](https://m3g.github.io/packmol/nmols.shtml) from PACKMOL site to find a good initial box side. Also, it is always recommended to start the MD simulation with boxes that are larger than the expected equilibrated system. Then, I recommend to add 5 angstrom to the values suggested from **PACKMOL VOLUME GUESSER** tool. If you do not have any information about your equilibrium density or experimental, try to use values from similar systems.
 
-Third, remember that in MD we relly on statystics, then, very small systems will have problems or not so good results.
+Third, remember that in MD we relly on statystics, then, very small systems will have problems or not good results.
 
 ### Third step, MD simulation protocol:
 
