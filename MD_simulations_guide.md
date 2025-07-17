@@ -1,4 +1,4 @@
-# How to Perform MD Simulations - update June 2025
+# How to Perform MD Simulations - update July 2025
 
 In this file we show the procedures and organization that we use to perform our MD simulations. Keep in mind that this file was created at June, 2025. Then, it can be **outdated**.
 First, we recommend the reading of the follow articles, which summarizes best practices and a short introduction about the methodology:
