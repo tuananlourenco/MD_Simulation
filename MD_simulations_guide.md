@@ -99,6 +99,26 @@ To run packmol you only need the *pdb files and the *packmol.inp* input. To exec
 
 Once the loop is over and you see the follwoing message, everything is ok:
 
+################################################################################
+
+                                 Success! 
+              Final objective function value: .15800E-01
+              Maximum violation of target distance:   0.008085
+              Maximum violation of the constraints: .77707E-02
+
+--------------------------------------------------------------------------------
+
+              Please cite this work if Packmol was useful: 
+
+           L. Martinez, R. Andrade, E. G. Birgin, J. M. Martinez, 
+         PACKMOL: A package for building initial configurations for
+                   molecular dynamics simulations. 
+        Journal of Computational Chemistry, 30(13) pp. 2157-2164, 2009.
+                  https://doi.org/10.1002/jcc.21224
+
+################################################################################
+
+
 Now, lets ensure that the box is really cubic. Open the output and check CRYST1 line, for example:
 
     CRYST1    60.21    60.27    60.21  90.00  90.00  90.00 P 1           1
