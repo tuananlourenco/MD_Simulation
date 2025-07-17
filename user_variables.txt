@@ -20,6 +20,14 @@ overleaf_name      = Meeting
 start_year         = 2025
 ;box side in the initial pdb from PACKMOL obtained by volume guesser
 boxside            = 0.0 0.0 0.0 55.0 55.0 55.0
+topology_name      = topology.top
+
+[PBS_job]
+queue = Q96c
+walltime = 48:00:00
+jobname = TESTE
+n_cores = 96
+n_openmp = 1
 
 [MD_General]
 rlist	  = 1.4 {nm}
@@ -425,15 +433,3 @@ morse                    = no
 #Information for directory name
 T-initial                = 400 {K}
 T-final                  = 400 {K}
-
-[PBS_job]
-queue = Q96c 
-walltime = 48:00:00
-jobname = TESTE
-n_cores = 96
-n_openmp = 1
-
-[paths]
-#Place were you have your PDB files, remember that name MUST BE the same as the molecules names in this file
-Original_PDB_Folder     = /home/tuanan/teste/PDB
-
