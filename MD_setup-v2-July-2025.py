@@ -429,7 +429,7 @@ def _get_concentration_ratio(config_data):
                 # Se a proporção não for um inteiro, formata com 2 casas decimais
                 ratios.append(f"{ratio_value:.2f}")
 
-        return ":".join(ratios)
+        return "-".join(ratios)
 
     except (configparser.NoOptionError, ValueError) as e:
         print(f"Erro ao ler as quantidades de espécies para calcular a proporção: {e}.")
