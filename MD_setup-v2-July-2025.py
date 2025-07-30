@@ -142,17 +142,10 @@ def create_main_simulation_directory(config_data):
         print(f"Um erro inesperado ocorreu ao criar o diretório principal: {e}")
         return None
 
-
 def create_run_subdirectories_actual(run_parent_dir, config_data):
     """
     Cria os subdiretórios específicos de etapas da simulação dentro do diretório RUN
     com a nova nomenclatura numerada e detalhada.
-
-    Args:
-        run_parent_dir (str): O caminho para o diretório RUN.
-        config_data (configparser.ConfigParser): Objeto ConfigParser com as variáveis do usuário.
-    Returns:
-        str: O caminho completo para o diretório de minimização se bem-sucedido, senão None.
     """
     if not run_parent_dir:
         print("Não foi possível criar diretórios de etapas: o diretório RUN não foi especificado.")
@@ -167,23 +160,25 @@ def create_run_subdirectories_actual(run_parent_dir, config_data):
         section = '1-min'
         integrator_em = config_data.get(section, 'integrator', fallback='NA')
         emtol_em = config_data.get(section, 'emtol', fallback='NA')
+        emtol_em_str = emtol_em.replace('.', 'p')
         nsteps_em = config_data.get(section, 'nsteps', fallback='NA')
         emstep_em = config_data.get(section, 'emstep', fallback='NA')
-        em_dir_name = f"1-min_integrator-{integrator_em}_emtol-{emtol_em}_nsteps-{nsteps_em}_emstep-{emstep_em}"
+        emstep_em_str = emstep_em.replace('.', 'p') # CORREÇÃO AQUI
+        em_dir_name = f"1-min_integrator-{integrator_em}_emtol-{emtol_em_str}_nsteps-{nsteps_em}_emstep-{emstep_em_str}"
         em_path = os.path.join(run_parent_dir, em_dir_name)
         os.makedirs(em_path, exist_ok=True)
         print(f"  Criado: '{em_path}'")
-        min_dir_path = em_path  # Armazena o caminho para retorno
-
+        min_dir_path = em_path
         # --- 2. NVT Thermalization ---
         section = '2-NVT_thermalization'
         integrator_nvt2 = config_data.get(section, 'integrator', fallback='NA')
         dt_nvt2 = float(config_data.get(section, 'dt', fallback=0))
+        dt_nvt2_str = str(dt_nvt2).replace('.', 'p')
         nsteps_nvt2 = int(config_data.get(section, 'nsteps', fallback=0))
         time_nvt2_ps = int(dt_nvt2 * nsteps_nvt2)
         ref_t_nvt2 = config_data.get(section, 'ref-t', fallback='NA')
         tcoupl_nvt2 = config_data.get(section, 'tcoupl', fallback='NA')
-        nvt2_dir_name = f"2-NVT_thermalization_integrator-{integrator_nvt2}_dt_{dt_nvt2}_time_{time_nvt2_ps}ps_T-{ref_t_nvt2}_{tcoupl_nvt2}"
+        nvt2_dir_name = f"2-NVT_thermalization_integrator-{integrator_nvt2}_dt_{dt_nvt2_str}_time_{time_nvt2_ps}ps_T-{ref_t_nvt2}_{tcoupl_nvt2}"
         nvt2_path = os.path.join(run_parent_dir, nvt2_dir_name)
         os.makedirs(nvt2_path, exist_ok=True)
         print(f"  Criado: '{nvt2_path}'")
@@ -192,14 +187,16 @@ def create_run_subdirectories_actual(run_parent_dir, config_data):
         section = '3-NPT_ergodicity'
         integrator_npt3 = config_data.get(section, 'integrator', fallback='NA')
         dt_npt3 = float(config_data.get(section, 'dt', fallback=0))
+        dt_npt3_str = str(dt_npt3).replace('.', 'p')
         nsteps_npt3 = int(config_data.get(section, 'nsteps', fallback=0))
         time_npt3_ps = int(dt_npt3 * nsteps_npt3)
         t_initial_npt3 = config_data.get(section, 't-initial', fallback='NA')
         t_final_npt3 = config_data.get(section, 't-final', fallback='NA')
         ref_p_npt3 = config_data.get(section, 'ref-p', fallback='NA')
+        ref_p_npt3_str = ref_p_npt3.replace('.', 'p')
         tcoupl_npt3 = config_data.get(section, 'tcoupl', fallback='NA')
         pcoupl_npt3 = config_data.get(section, 'pcoupl', fallback='NA')
-        npt3_dir_name = f"3-NPT_ergodicity_integrator-{integrator_npt3}_dt_{dt_npt3}_time_{time_npt3_ps}ps_T-{t_initial_npt3}-{t_final_npt3}-K_P-{ref_p_npt3}-bar_{tcoupl_npt3}_{pcoupl_npt3}"
+        npt3_dir_name = f"3-NPT_ergodicity_integrator-{integrator_npt3}_dt_{dt_npt3_str}_time_{time_npt3_ps}ps_T-{t_initial_npt3}-{t_final_npt3}-K_P-{ref_p_npt3_str}-bar_{tcoupl_npt3}_{pcoupl_npt3}"
         npt3_path = os.path.join(run_parent_dir, npt3_dir_name)
         os.makedirs(npt3_path, exist_ok=True)
         print(f"  Criado: '{npt3_path}'")
@@ -208,13 +205,15 @@ def create_run_subdirectories_actual(run_parent_dir, config_data):
         section = '4-NPT_equilibration'
         integrator_npt4 = config_data.get(section, 'integrator', fallback='NA')
         dt_npt4 = float(config_data.get(section, 'dt', fallback=0))
+        dt_npt4_str = str(dt_npt4).replace('.', 'p')
         nsteps_npt4 = int(config_data.get(section, 'nsteps', fallback=0))
         time_npt4_ps = int(dt_npt4 * nsteps_npt4)
         ref_t_npt4 = config_data.get(section, 'ref-t', fallback='NA')
         ref_p_npt4 = config_data.get(section, 'ref-p', fallback='NA')
+        ref_p_npt4_str = ref_p_npt4.replace('.', 'p')
         tcoupl_npt4 = config_data.get(section, 'tcoupl', fallback='NA')
         pcoupl_npt4 = config_data.get(section, 'pcoupl', fallback='NA')
-        npt4_dir_name = f"4-NPT_equilibration_integrator-{integrator_npt4}_dt_{dt_npt4}_time_{time_npt4_ps}ps_T-{ref_t_npt4}-K_P-{ref_p_npt4}-bar_{tcoupl_npt4}_{pcoupl_npt4}"
+        npt4_dir_name = f"4-NPT_equilibration_integrator-{integrator_npt4}_dt_{dt_npt4_str}_time_{time_npt4_ps}ps_T-{ref_t_npt4}-K_P-{ref_p_npt4_str}-bar_{tcoupl_npt4}_{pcoupl_npt4}"
         npt4_path = os.path.join(run_parent_dir, npt4_dir_name)
         os.makedirs(npt4_path, exist_ok=True)
         print(f"  Criado: '{npt4_path}'")
@@ -224,28 +223,29 @@ def create_run_subdirectories_actual(run_parent_dir, config_data):
         if section in config_data:
             integrator_nvt6 = config_data.get(section, 'integrator', fallback='NA')
             dt_nvt6 = float(config_data.get(section, 'dt', fallback=0))
+            dt_nvt6_str = str(dt_nvt6).replace('.', 'p')
             nsteps_nvt6 = int(config_data.get(section, 'nsteps', fallback=0))
             time_nvt6_ps = int(dt_nvt6 * nsteps_nvt6)
             ref_t_nvt6 = config_data.get(section, 'ref-t', fallback='NA')
             tcoupl_nvt6 = config_data.get(section, 'tcoupl', fallback='NA')
-            nvt6_dir_name = f"6-NVT_re-equilibrium_integrator-{integrator_nvt6}_dt_{dt_nvt6}_time_{time_nvt6_ps}ps_T-{ref_t_nvt6}-K_{tcoupl_nvt6}"
+            nvt6_dir_name = f"6-NVT_re-equilibrium_integrator-{integrator_nvt6}_dt_{dt_nvt6_str}_time_{time_nvt6_ps}ps_T-{ref_t_nvt6}-K_{tcoupl_nvt6}"
             nvt6_path = os.path.join(run_parent_dir, nvt6_dir_name)
             os.makedirs(nvt6_path, exist_ok=True)
             print(f"  Criado: '{nvt6_path}'")
         else:
             print(f"Aviso: Seção '[{section}]' não encontrada. Pulando a criação deste subdiretório.")
 
-
         # --- 7. NVT Production ---
         section = '7-NVT_production'
         integrator_nvt5 = config_data.get(section, 'integrator', fallback='NA')
         dt_nvt5 = float(config_data.get(section, 'dt', fallback=0))
+        dt_nvt5_str = str(dt_nvt5).replace('.', 'p')
         nsteps_nvt5 = int(config_data.get(section, 'nsteps', fallback=0))
         time_nvt5_ps = int(dt_nvt5 * nsteps_nvt5)
         ref_t_nvt5 = config_data.get(section, 'ref-t', fallback='NA')
         tcoupl_nvt5 = config_data.get(section, 'tcoupl', fallback='NA')
         nstxout_compressed_nvt5 = config_data.get(section, 'nstxout-compressed', fallback='NA')
-        nvt5_dir_name = f"7-NVT_production_integrator-{integrator_nvt5}_dt_{dt_nvt5}_time_{time_nvt5_ps}ps_T-{ref_t_nvt5}-K_{tcoupl_nvt5}_dump-{nstxout_compressed_nvt5}"
+        nvt5_dir_name = f"7-NVT_production_integrator-{integrator_nvt5}_dt_{dt_nvt5_str}_time_{time_nvt5_ps}ps_T-{ref_t_nvt5}-K_{tcoupl_nvt5}_dump-{nstxout_compressed_nvt5}"
         nvt5_path = os.path.join(run_parent_dir, nvt5_dir_name)
         os.makedirs(nvt5_path, exist_ok=True)
         print(f"  Criado: '{nvt5_path}'")
@@ -262,6 +262,7 @@ def create_run_subdirectories_actual(run_parent_dir, config_data):
     except Exception as e:
         print(f"Um erro inesperado ocorreu ao criar os diretórios de etapa: {e}")
         return None
+
 
 def _replace_mdp_parameters(template_content, params_dict):
     """
@@ -641,7 +642,6 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
         ncpus = int(config_data.get(pbs_section, 'ncpus', fallback=1))
         n_openmp = int(config_data.get(pbs_section, 'n_openmp', fallback=1))
         
-        # <<<<<< LENDO A NOVA VARIÁVEL AQUI >>>>>>
         topology_name = config_data.get('general', 'topology_name', fallback='TOPOL.TOP')
         print(f"Usando topology_name: {topology_name}")
 
@@ -651,19 +651,12 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
         else:
             n_mpi = ncpus
 
-        # Obter nsteps e dt para 4-NPT_equilibration e calcular half_nsteps em ps
-        # O UnitStrippingConfigParser já remove as unidades, então 'dt' e 'nsteps' são lidos como strings limpas.
-        dt_npt4_raw = config_data.get('4-NPT_equilibration', 'dt', fallback='0')
-        nsteps_npt4_raw = config_data.get('4-NPT_equilibration', 'nsteps', fallback='0')
-        
+        # Obter nsteps e dt para 4-NPT_equilibration para o cálculo do tempo
         try:
-            dt_npt4 = float(dt_npt4_raw)
-            nsteps_npt4 = int(nsteps_npt4_raw)
-            # Cálculo de half_nsteps_ps: (nsteps / 2) * dt
+            dt_npt4 = float(config_data.get('4-NPT_equilibration', 'dt', fallback='0'))
+            nsteps_npt4 = int(config_data.get('4-NPT_equilibration', 'nsteps', fallback='0'))
             half_nsteps_ps_npt4 = (nsteps_npt4 / 2) * dt_npt4
-            # Formata para ter duas casas decimais, ou inteiro se for o caso
             half_nsteps_ps_npt4_str = f"{half_nsteps_ps_npt4:.2f}".rstrip('0').rstrip('.') if '.' in str(half_nsteps_ps_npt4) else str(int(half_nsteps_ps_npt4))
-
             print(f"Calculado half-nsteps para 4-NPT_equilibration: {half_nsteps_ps_npt4_str} ps")
         except ValueError:
             print("Aviso: 'dt' ou 'nsteps' para 4-NPT_equilibration não são números válidos. Usando '0' para half-nsteps.")
@@ -671,30 +664,53 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
 
 
         # --- Parte 2: Recalcular nomes dinâmicos necessários ---
-        packmol_output_pdb = f"box-{system_name}-{system_size}-species-{salt_concentration}.pdb"
-        min_dir_name = f"1-min_integrator-{config_data.get('1-min', 'integrator', fallback='NA')}_emtol-{config_data.get('1-min', 'emtol', fallback='NA')}_nsteps-{config_data.get('1-min', 'nsteps', fallback='NA')}_emstep-{config_data.get('1-min', 'emstep', fallback='NA')}"
+        packmol_output_pdb = f"box-{system_name}-{system_size}-species-{salt_concentration}-ratio.pdb"
+        
+        # Minimização 1
+        emtol_em = config_data.get('1-min', 'emtol', fallback='NA')
+        emtol_em_str = emtol_em.replace('.', 'p')
+        emstep_em = config_data.get('1-min', 'emstep', fallback='NA')
+        emstep_em_str = emstep_em.replace('.', 'p')
+        min_dir_name = f"1-min_integrator-{config_data.get('1-min', 'integrator', fallback='NA')}_emtol-{emtol_em_str}_nsteps-{config_data.get('1-min', 'nsteps', fallback='NA')}_emstep-{emstep_em_str}"
 
+        # NVT 2
         dt_nvt2 = float(config_data.get('2-NVT_thermalization', 'dt', fallback=0))
+        dt_nvt2_str = str(dt_nvt2).replace('.', 'p')
         nsteps_nvt2 = int(config_data.get('2-NVT_thermalization', 'nsteps', fallback=0))
-        nvt_dir_name = f"2-NVT_thermalization_integrator-{config_data.get('2-NVT_thermalization', 'integrator', fallback='NA')}_dt_{dt_nvt2}_time_{int(dt_nvt2 * nsteps_nvt2)}ps_T-{config_data.get('2-NVT_thermalization', 'ref-t', fallback='NA')}_{config_data.get('2-NVT_thermalization', 'tcoupl', fallback='NA')}"
+        nvt_dir_name = f"2-NVT_thermalization_integrator-{config_data.get('2-NVT_thermalization', 'integrator', fallback='NA')}_dt_{dt_nvt2_str}_time_{int(dt_nvt2 * nsteps_nvt2)}ps_T-{config_data.get('2-NVT_thermalization', 'ref-t', fallback='NA')}_{config_data.get('2-NVT_thermalization', 'tcoupl', fallback='NA')}"
 
-        npt3_dir_name = f"3-NPT_ergodicity_integrator-{config_data.get('3-NPT_ergodicity', 'integrator', fallback='NA')}_dt_{float(config_data.get('3-NPT_ergodicity', 'dt', fallback=0))}_time_{int(float(config_data.get('3-NPT_ergodicity', 'dt', fallback=0)) * int(config_data.get('3-NPT_ergodicity', 'nsteps', fallback=0)))}ps_T-{config_data.get('3-NPT_ergodicity', 't-initial', fallback='NA')}-{config_data.get('3-NPT_ergodicity', 't-final', fallback='NA')}-K_P-{config_data.get('3-NPT_ergodicity', 'ref-p', fallback='NA')}-bar_{config_data.get('3-NPT_ergodicity', 'tcoupl', fallback='NA')}_{config_data.get('3-NPT_ergodicity', 'pcoupl', fallback='NA')}"
-        # npt4_dir_name já foi definido em create_run_subdirectories_actual e usa nsteps_npt4 limpo
-        npt4_dir_name = f"4-NPT_equilibration_integrator-{config_data.get('4-NPT_equilibration', 'integrator', fallback='NA')}_dt_{dt_npt4_raw}_time_{int(float(dt_npt4_raw) * int(nsteps_npt4_raw))}ps_T-{config_data.get('4-NPT_equilibration', 'ref-t', fallback='NA')}-K_P-{config_data.get('4-NPT_equilibration', 'ref-p', fallback='NA')}-bar_{config_data.get('4-NPT_equilibration', 'tcoupl', fallback='NA')}_{config_data.get('4-NPT_equilibration', 'pcoupl', fallback='NA')}"
+        # NPT 3
+        dt_npt3 = float(config_data.get('3-NPT_ergodicity', 'dt', fallback=0))
+        dt_npt3_str = str(dt_npt3).replace('.', 'p')
+        nsteps_npt3 = int(config_data.get('3-NPT_ergodicity', 'nsteps', fallback=0))
+        ref_p_npt3 = config_data.get('3-NPT_ergodicity', 'ref-p', fallback='NA')
+        ref_p_npt3_str = ref_p_npt3.replace('.', 'p')
+        npt3_dir_name = f"3-NPT_ergodicity_integrator-{config_data.get('3-NPT_ergodicity', 'integrator', fallback='NA')}_dt_{dt_npt3_str}_time_{int(dt_npt3 * nsteps_npt3)}ps_T-{config_data.get('3-NPT_ergodicity', 't-initial', fallback='NA')}-{config_data.get('3-NPT_ergodicity', 't-final', fallback='NA')}-K_P-{ref_p_npt3_str}-bar_{config_data.get('3-NPT_ergodicity', 'tcoupl', fallback='NA')}_{config_data.get('3-NPT_ergodicity', 'pcoupl', fallback='NA')}"
 
+        # NPT 4
+        dt_npt4_str = str(dt_npt4).replace('.', 'p')
+        ref_p_npt4 = config_data.get('4-NPT_equilibration', 'ref-p', fallback='NA')
+        ref_p_npt4_str = ref_p_npt4.replace('.', 'p')
+        npt4_dir_name = f"4-NPT_equilibration_integrator-{config_data.get('4-NPT_equilibration', 'integrator', fallback='NA')}_dt_{dt_npt4_str}_time_{int(dt_npt4 * nsteps_npt4)}ps_T-{config_data.get('4-NPT_equilibration', 'ref-t', fallback='NA')}-K_P-{ref_p_npt4_str}-bar_{config_data.get('4-NPT_equilibration', 'tcoupl', fallback='NA')}_{config_data.get('4-NPT_equilibration', 'pcoupl', fallback='NA')}"
 
+        # NVT 6
         nvt6_dir_name = ""
         section_nvt6 = '6-NVT_re-equilibrium'
         if section_nvt6 in config_data:
-            nvt6_dir_name = f"6-NVT_re-equilibrium_integrator-{config_data.get(section_nvt6, 'integrator', fallback='NA')}_dt_{float(config_data.get(section_nvt6, 'dt', fallback=0))}_time_{int(float(config_data.get(section_nvt6, 'dt', fallback=0)) * int(config_data.get(section_nvt6, 'nsteps', fallback=0)))}ps_T-{config_data.get(section_nvt6, 'ref-t', fallback='NA')}-K_{config_data.get(section_nvt6, 'tcoupl', fallback='NA')}"
+            dt_nvt6 = float(config_data.get(section_nvt6, 'dt', fallback=0))
+            dt_nvt6_str = str(dt_nvt6).replace('.', 'p')
+            nsteps_nvt6 = int(config_data.get(section_nvt6, 'nsteps', fallback=0))
+            nvt6_dir_name = f"6-NVT_re-equilibrium_integrator-{config_data.get(section_nvt6, 'integrator', fallback='NA')}_dt_{dt_nvt6_str}_time_{int(dt_nvt6 * nsteps_nvt6)}ps_T-{config_data.get(section_nvt6, 'ref-t', fallback='NA')}-K_{config_data.get(section_nvt6, 'tcoupl', fallback='NA')}"
 
+        # NVT 7
         section_nvt7 = '7-NVT_production'
-        nvt7_dir_name = f"7-NVT_production_integrator-{config_data.get(section_nvt7, 'integrator', fallback='NA')}_dt_{float(config_data.get(section_nvt7, 'dt', fallback=0))}_time_{int(float(config_data.get(section_nvt7, 'dt', fallback=0)) * int(config_data.get(section_nvt7, 'nsteps', fallback=0)))}ps_T-{config_data.get(section_nvt7, 'ref-t', fallback='NA')}-K_{config_data.get(section_nvt7, 'tcoupl', fallback='NA')}_dump-{config_data.get(section_nvt7, 'nstxout-compressed', fallback='NA')}"
+        dt_nvt7 = float(config_data.get(section_nvt7, 'dt', fallback=0))
+        dt_nvt7_str = str(dt_nvt7).replace('.', 'p')
+        nsteps_nvt7 = int(config_data.get(section_nvt7, 'nsteps', fallback=0))
+        nvt7_dir_name = f"7-NVT_production_integrator-{config_data.get(section_nvt7, 'integrator', fallback='NA')}_dt_{dt_nvt7_str}_time_{int(dt_nvt7 * nsteps_nvt7)}ps_T-{config_data.get(section_nvt7, 'ref-t', fallback='NA')}-K_{config_data.get(section_nvt7, 'tcoupl', fallback='NA')}_dump-{config_data.get(section_nvt7, 'nstxout-compressed', fallback='NA')}"
 
         # --- Bloco 3: Gerar e Salvar cada Jobfile ---
-
         # --- Job 1 ---
-        # ATENÇÃO: Substituído TOPOL.TOP por {topology_name}
         job1_template = f"""#!/bin/bash
 #PBS -N MD1-{jobname}
 #PBS -e job.md.1.err
@@ -836,7 +852,6 @@ date >> ../JOB.md.1.out
         print(f"Arquivo de job 'job.md.1' gerado com sucesso em: '{output_path1}'")
 
         # --- Job 2 ---
-        # ATENÇÃO: Substituído TOPOL.TOP por {topology_name} e adicionado -b {half_nsteps_ps_npt4_str}
         job2_template = f"""#!/bin/bash
 #PBS -N MD2-{jobname}
 #PBS -e job.md.2.err
@@ -886,7 +901,7 @@ echo "---------------------------------------------"
 # Here the GROMACS part Start
 # Execute GROMACS using mpirun (ensure the binary is executable)
 
-####################3-NPT_ergodicity Running########################################################################
+####################4-NPT_equilibration Running########################################################################
 
 cd {npt4_dir_name}
 
@@ -925,7 +940,6 @@ date >> ../JOB.md.2.out
 
         # --- Job 3 ---
         if nvt6_dir_name:
-            # ATENÇÃO: Substituído TOPOL.TOP por {topology_name}
             job3_template = f"""#!/bin/bash
 #PBS -N MD3-{jobname}
 #PBS -e job.md.3.err
@@ -1008,8 +1022,7 @@ date >> ../JOB.md.3.out
                 f.write(job3_template)
             print(f"Arquivo de job 'job.md.3' gerado com sucesso em: '{output_path3}'")
 
-            # --- Job 4 (aninhado, pois depende do Job 3) ---
-            # ATENÇÃO: Substituído TOPOL.TOP por {topology_name}
+            # --- Job 4 ---
             job4_template = f"""#!/bin/bash
 #PBS -N MD4-{jobname}
 #PBS -e job.md.4.err
@@ -1059,7 +1072,7 @@ echo "---------------------------------------------"
 # Here the GROMACS part Start
 # Execute GROMACS using mpirun (ensure the binary is executable)
 
-####################6-NVT_re-equilibrium Running########################################################################
+####################7-NVT_production Running########################################################################
 
 cd {nvt7_dir_name}
 
@@ -1100,7 +1113,6 @@ date >> ../JOB.md.4.out
     except Exception as e:
         print(f"Um erro inesperado ocorreu em generate_pbs_jobs: {e}")
         return False
-
 
 def _escape_latex(text: str) -> str:
     """
