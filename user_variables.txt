@@ -1,3 +1,7 @@
+; All information here is only an example. It is your responsability change appropriately
+; If you have questions about the GROMACS mdp parameters check ---> https://manual.gromacs.org/2024-beta/user-guide/mdp-options.html
+
+; ------- SYSTEM DEFINITION ----------------------------------------------------
 [general]
 ;Number of type of species
 N#_species_type     = 2
@@ -13,28 +17,44 @@ specie2_ammount = 500
 specie3_ammount = 
 specie4_ammount =
 specie5_ammount = 
+
+; ------- PROJECT DETAILS ----------------------------------------------------
 software           = GROMACS
 ff                 = CLP
-T_production           = 400K
+T_production       = 400K
 overleaf_name      = Meeting
 start_year         = 2025
+
+; ------- PACKMOL ----------------------------------------------------
 ;box side in the initial pdb from PACKMOL obtained by volume guesser
 boxside            = 0.0 0.0 0.0 55.0 55.0 55.0
+
+; ------- TOPOLOGY INFORMATION  ----------------------------------------------------
+; Provide the name of your topology file. It will be used in the pbs jobfile
 topology_name      = topology.top
 
+; ------- PBS PART ----------------------------------------------------
 [PBS_job]
-queue = Q20c
+queue    = Q20c
 walltime = 48:00:00
-jobname = TESTE
-ncpus = 20
+jobname  = TESTE
+ncpus    = 20
 n_openmp = 4
+n_mpi    = 5
+; Help yourself and use a jobname that it is usefull
+; Remember that each queue in ENIAC has its own rules. Check Eniac manual
+; Always ensure that n_openmp X n_mpi = ncpus
+; For example, you asked 20 cores because of the Q20c, then n_openmp X n_mpi = 20
 
+; ------- MD Protocol Information  ----------------------------------------------------
 [MD_General]
-rlist	  = 1.4 {nm}
+rlist     = 1.4 {nm}
 rcoulomb  = 1.4 {nm}
-rvdw	  = 1.4 {nm}
+rvdw      = 1.4 {nm}
 
+; ------- 1-min Protocol Information  ----------------------------------------------------
 [1-min]
+; RUN CONTROL PARAMETERS
 ;Integrator and main options
 integrator          = steep
 emtol               = 1000 {kJ mol^-1 nm^-1]}
@@ -42,38 +62,77 @@ emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
 nsteps                   = 500000 
-;Temperature
+; Number of steps for center of mass motion removal.
+nstcomm                  = 10
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            = 10
+
+; OUTPUT CONTROL OPTIONS
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
+nstxout                  = 300
+nstvout                  = 300
+nstfout                  = 300
+; Output frequency for log file.
+nstlog                   = 300
+; Output frequency for energy file.
+nstenergy                = 1
+; Output frequency and precision for xtc file.
+nstxout-compressed       = 0
+
+; NEIGHBORSEARCHING PARAMETERS
+; Interval between steps that update the neighbor list.
+nstlist                  = 10
+
+; OPTIONS FOR ELECTROSTATICS AND VDW
+; Method for doing electrostatics.
+coulombtype              = PME
+; Method for doing Van der Waals.
+vdwtype                  = cutoff
+
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
 tcoupl                   = no
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
 tau-t                    = 0.1 {ps}
+; Reference temperature for the simulation (K).
 ref-t                    = 600 {K}
+; Interval between steps that couple the temperature.
+nsttcouple               = 10
+
+; GENERATE VELOCITIES FOR STARTUP RUN
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
 gen-vel                  = no
-gen-temp                 = 600 {K}
+; Temperature for Maxwell distribution (K).
+gen-temp                 =
+
 ; SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
+; Type of annealing for each temperature group (no/single/periodic).
 annealing                = no
-; Number of time points to use for specifying annealing in each group
-annealing_npoints        = 6
-; List of times at the annealing points for each group
-annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
-; Temp. at each annealing point, for each group.
-annealing_temp           = 600 500  500  400  400   600   500   500   400   400
-;Pressure
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        =
+; List of times at the annealing points (ps).
+annealing_time           =
+; Temp. at each annealing point.
+annealing_temp           =
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, berendsen, c-rescale, parrinello-rahman.
 pcoupl                   = no
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
 tau-p                    = 0.5 {ps}
-compressibility          = 4.5e-5 {bar^-1}
+; Reference pressure for the simulation (bar).
 ref-p                    = 1.0 {bar}
-;Output
-nstxout                  = 00
-nstvout                  = 00
-nstfout                  = 00
-nstlog                   = 500
-nstenergy                = 500
-nstxout-compressed       = 1000
-xtc-precision            = 1000
-;nstcalcenergy            = 100
-;
-OPTIONS FOR BONDS
+; Interval between steps that couple the pressure.
+nstpcouple               = 10
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
 continuation             = no
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
 ; Type of constraint algorithm
 constraint-algorithm     = LINCS
@@ -82,56 +141,94 @@ lincs-order              = 8
 ; Number of iterations in the final step of LINCS. 1 is fine for
 ; normal simulations, but use 2 to conserve energy in NVE runs.
 ; For energy minimization with constraints it should be 4 to 8.
-lincs-iter               = 1
-; Lincs will write a warning to the stderr if in one step a bond
-; rotates over more degrees than
-lincs-warnangle          = 45
-; Convert harmonic bonds to morse potentials
-morse                    = no
+lincs-iter               = 2
+
 #Information for directory name
 T-initial                = 0 {K}
 T-final                  = 0 {K}
 
+; ------- 2-NVT_thermalization Protocol Information  ----------------------------------------------------
+
 [2-NVT_thermalization]
+; RUN CONTROL PARAMETERS
 ;Integrator and main options
-integrator               = md
-emtol                    = 10 {kJ mol-1 nm-1]}
-emstep                   = 0.01 {nm}
+integrator          = md
+emtol               = 1000 {kJ mol^-1 nm^-1]}
+emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 4000000
-;Temperature
+nsteps                   = 1000000
+; Number of steps for center of mass motion removal.
+nstcomm                  = 10
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            = 10
+
+; OUTPUT CONTROL OPTIONS
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+; Output frequency for log file.
+nstlog                   = 300
+; Output frequency for energy file.
+nstenergy                = 1
+; Output frequency and precision for xtc file.
+nstxout-compressed       = 300
+
+; NEIGHBORSEARCHING PARAMETERS
+; Interval between steps that update the neighbor list.
+nstlist                  = 10
+
+; OPTIONS FOR ELECTROSTATICS AND VDW
+; Method for doing electrostatics.
+coulombtype              = PME
+; Method for doing Van der Waals.
+vdwtype                  = cutoff
+
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
 tcoupl                   = v-rescale
-tau-t                    = 0.1 {ps}
-ref-t                    = 700 {K}
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
+tau-t                    = 1.0 {ps}
+; Reference temperature for the simulation (K).
+ref-t                    = 600 {K}
+; Interval between steps that couple the temperature.
+nsttcouple               = 10
+
+; GENERATE VELOCITIES FOR STARTUP RUN
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
 gen-vel                  = yes
-gen-temp                 = 700 {K}
+; Temperature for Maxwell distribution (K).
+gen-temp                 = 600
+
 ; SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
+; Type of annealing for each temperature group (no/single/periodic).
 annealing                = no
-; Number of time points to use for specifying annealing in each group
-annealing_npoints        = 10
-; List of times at the annealing points for each group
-annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
-; Temp. at each annealing point, for each group.
-annealing_temp           = 600 500  500  400  400   600   500   500   400   400
-;Pressure
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        =
+; List of times at the annealing points (ps).
+annealing_time           =
+; Temp. at each annealing point.
+annealing_temp           =
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, berendsen, c-rescale, parrinello-rahman.
 pcoupl                   = no
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
 tau-p                    = 0.5 {ps}
-compressibility          = 4.5e-5 {bar^-1}
+; Reference pressure for the simulation (bar).
 ref-p                    = 1.0 {bar}
-;Output
-nstxout                  = 00
-nstvout                  = 00
-nstfout                  = 00
-nstlog                   = 1000
-nstenergy                = 1000
-nstxout-compressed       = 1000
-xtc-precision            = 1000
-;nstcalcenergy            = 100
-;
-OPTIONS FOR BONDS
-continuation             = no
+; Interval between steps that couple the pressure.
+nstpcouple               = 10
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
+continuation             = yes
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
 ; Type of constraint algorithm
 constraint-algorithm     = LINCS
@@ -141,295 +238,392 @@ lincs-order              = 4
 ; normal simulations, but use 2 to conserve energy in NVE runs.
 ; For energy minimization with constraints it should be 4 to 8.
 lincs-iter               = 1
-; Lincs will write a warning to the stderr if in one step a bond
-; rotates over more degrees than
-lincs-warnangle          = 45
-; Convert harmonic bonds to morse potentials
-morse                    = no
+
 #Information for directory name
-T-initial                = 700 {K}
-T-final                  = 700 {K}
+T-initial                = 600 {K}
+T-final                  = 600 {K}
+
+; ------- 3-NPT_ergodicity Protocol Information  ----------------------------------------------------
 
 [3-NPT_ergodicity]
+; RUN CONTROL PARAMETERS
 ;Integrator and main options
-integrator               = md
-emtol                    = 10 {kJ mol-1 nm-1]}
-emstep                   = 0.01 {nm}
+integrator          = md
+emtol               = 1000 {kJ mol^-1 nm^-1]}
+emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 21000000
-;Temperature
+nsteps                   = 3000000
+; Number of steps for center of mass motion removal.
+nstcomm                  = 10
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            = 10
+
+; OUTPUT CONTROL OPTIONS
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+; Output frequency for log file.
+nstlog                   = 300
+; Output frequency for energy file.
+nstenergy                = 1
+; Output frequency and precision for xtc file.
+nstxout-compressed       = 300
+
+; NEIGHBORSEARCHING PARAMETERS
+; Interval between steps that update the neighbor list.
+nstlist                  = 10
+
+; OPTIONS FOR ELECTROSTATICS AND VDW
+; Method for doing electrostatics.
+coulombtype              = PME
+; Method for doing Van der Waals.
+vdwtype                  = cutoff
+
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
 tcoupl                   = v-rescale
-tau-t                    = 0.1 {ps}
-ref-t                    = 700 {K}
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
+tau-t                    = 1.0 {ps}
+; Reference temperature for the simulation (K).
+ref-t                    = 600 {K}
+; Interval between steps that couple the temperature.
+nsttcouple               = 10
+
+; GENERATE VELOCITIES FOR STARTUP RUN
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
 gen-vel                  = no
-gen-temp                 = 700 {K}
-;
-SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
+; Temperature for Maxwell distribution (K).
+gen-temp                 = 600
+
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic).
 annealing                = single
-;
-Number of time points to use for specifying annealing in each group
-annealing_npoints        = 10
-;
-List of times at the annealing points for each group
-annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
-;
-Temp. at each annealing point, for each group.
-annealing_temp           = 700 500  500  400  400   600   500   500   400   400
-;Pressure
-pcoupl                   = C-rescale
-tau-p                    = 1.0 {ps}
-compressibility          = 4.5e-5 {bar^-1}
-ref-p                    = 1.01325 {bar}
-;nsttcouple               = 2
-;Output
-nstxout                  = 00
-nstvout                  = 00
-nstfout                  = 00
-nstlog                   = 500
-nstenergy                = 500
-nstxout-compressed       = 500
-xtc-precision            = 1000
-;nstcalcenergy            = 100
-;
-OPTIONS FOR BONDS
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        = 4
+; List of times at the annealing points (ps).
+annealing_time           = 0 1000 2000 3000
+; Temp. at each annealing point (K).
+annealing_temp           = 600 500 400 300
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, berendsen, c-rescale, parrinello-rahman.
+pcoupl                   = c-rescale
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
+tau-p                    = 2.0 {ps}
+; Reference pressure for the simulation (bar).
+ref-p                    = 1.0 {bar}
+; Interval between steps that couple the pressure.
+nstpcouple               = 10
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
 continuation             = yes
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
-;
-Type of constraint algorithm
+; Type of constraint algorithm
 constraint-algorithm     = LINCS
-;
-Highest order in the expansion of the constraint coupling matrix
+; Highest order in the expansion of the constraint coupling matrix
 lincs-order              = 4
-;
-Number of iterations in the final step of LINCS. 1 is fine for
-;
-normal simulations, but use 2 to conserve energy in NVE runs.
-;
-For energy minimization with constraints it should be 4 to 8.
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
 lincs-iter               = 1
-;
-Lincs will write a warning to the stderr if in one step a bond
-;
-rotates over more degrees than
-lincs-warnangle          = 45
-;
-Convert harmonic bonds to morse potentials
-morse                    = no
+
 #Information for directory name
 T-initial                = 600 {K}
 T-final                  = 400 {K}
 
+; ------- 4-NPT_equilibration Protocol Information  ----------------------------------------------------
+
 [4-NPT_equilibration]
+; RUN CONTROL PARAMETERS
 ;Integrator and main options
-integrator               = md
-emtol                    = 10 {kJ mol-1 nm-1]}
-emstep                   = 0.01 {nm}
+integrator          = md
+emtol               = 1000 {kJ mol^-1 nm^-1]}
+emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 20000000
-;Temperature
-tcoupl                   = nose-hoover
-tau-t                    = 0.1 {ps}
-ref-t                    = 400 {K}
+nsteps                   = 3000000
+; Number of steps for center of mass motion removal.
+nstcomm                  = 10
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            = 10
+
+; OUTPUT CONTROL OPTIONS
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+; Output frequency for log file.
+nstlog                   = 300
+; Output frequency for energy file.
+nstenergy                = 1
+; Output frequency and precision for xtc file.
+nstxout-compressed       = 300
+
+; NEIGHBORSEARCHING PARAMETERS
+; Interval between steps that update the neighbor list.
+nstlist                  = 10
+
+; OPTIONS FOR ELECTROSTATICS AND VDW
+; Method for doing electrostatics.
+coulombtype              = PME
+; Method for doing Van der Waals.
+vdwtype                  = cutoff
+
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
+tcoupl                   = v-rescale
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
+tau-t                    = 1.0 {ps}
+; Reference temperature for the simulation (K).
+ref-t                    = 600 {K}
+; Interval between steps that couple the temperature.
+nsttcouple               = 10
+
+; GENERATE VELOCITIES FOR STARTUP RUN
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
 gen-vel                  = no
-gen-temp                 = 400 {K}
-;
-SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
+; Temperature for Maxwell distribution (K).
+gen-temp                 = 600
+
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic).
 annealing                = no
-;
-Number of time points to use for specifying annealing in each group
-annealing_npoints        = 10
-;
-List of times at the annealing points for each group
-annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
-;
-Temp. at each annealing point, for each group.
-annealing_temp           = 600 500  500  400  400   600   500   500   400   400
-;Pressure
-pcoupl                   = Parrinello-Rahman
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        = 4
+; List of times at the annealing points (ps).
+annealing_time           = 0 1000 2000 3000
+; Temp. at each annealing point (K).
+annealing_temp           = 600 500 400 300
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, berendsen, c-rescale, parrinello-rahman.
+pcoupl                   = c-rescale
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
 tau-p                    = 5.0 {ps}
-compressibility          = 4.5e-5 {bar^-1}
-ref-p                    = 1.01325 {bar}
-;nsttcouple               = 2
-;Output
-nstxout                  = 00
-nstvout                  = 00
-nstfout                  = 00
-nstlog                   = 500
-nstenergy                = 500
-nstxout-compressed       = 1000
-xtc-precision            = 500
-;nstcalcenergy            = 100
-;
-OPTIONS FOR BONDS
+; Reference pressure for the simulation (bar).
+ref-p                    = 1.0 {bar}
+; Interval between steps that couple the pressure.
+nstpcouple               = 10
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
 continuation             = yes
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
-;
-Type of constraint algorithm
+; Type of constraint algorithm
 constraint-algorithm     = LINCS
-;
-Highest order in the expansion of the constraint coupling matrix
+; Highest order in the expansion of the constraint coupling matrix
 lincs-order              = 4
-;
-Number of iterations in the final step of LINCS. 1 is fine for
-;
-normal simulations, but use 2 to conserve energy in NVE runs.
-;
-For energy minimization with constraints it should be 4 to 8.
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
 lincs-iter               = 1
-;
-Lincs will write a warning to the stderr if in one step a bond
-;
-rotates over more degrees than
-lincs-warnangle          = 45
-;
-Convert harmonic bonds to morse potentials
-morse                    = no
+
 #Information for directory name
 T-initial                = 400
 T-final                  = 400
 
+; ------- 6-NVT_re-equilibrium Protocol Information  ----------------------------------------------------
+
 [6-NVT_re-equilibrium]
+; RUN CONTROL PARAMETERS
 ;Integrator and main options
-integrator               = md
-emtol                    = 10 {kJ mol-1 nm-1]}
-emstep                   = 0.01 {nm}
+integrator          = md
+emtol               = 1000 {kJ mol^-1 nm^-1]}
+emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 5000000
-;Temperature
-tcoupl                   = nose-hoover
-tau-t                    = 0.1 {ps}
-ref-t                    = 400 {K}
+nsteps                   = 3000000
+; Number of steps for center of mass motion removal.
+nstcomm                  = 10
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            = 10
+
+; OUTPUT CONTROL OPTIONS
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+; Output frequency for log file.
+nstlog                   = 300
+; Output frequency for energy file.
+nstenergy                = 1
+; Output frequency and precision for xtc file.
+nstxout-compressed       = 300
+
+; NEIGHBORSEARCHING PARAMETERS
+; Interval between steps that update the neighbor list.
+nstlist                  = 10
+
+; OPTIONS FOR ELECTROSTATICS AND VDW
+; Method for doing electrostatics.
+coulombtype              = PME
+; Method for doing Van der Waals.
+vdwtype                  = cutoff
+
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
+tcoupl                   = v-rescale
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
+tau-t                    = 1.0 {ps}
+; Reference temperature for the simulation (K).
+ref-t                    = 600 {K}
+; Interval between steps that couple the temperature.
+nsttcouple               = 10
+
+; GENERATE VELOCITIES FOR STARTUP RUN
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
 gen-vel                  = no
-gen-temp                 = 400 {K}
-;
-SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
+; Temperature for Maxwell distribution (K).
+gen-temp                 = 600
+
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic).
 annealing                = no
-;
-Number of time points to use for specifying annealing in each group
-annealing_npoints        = 10
-;
-List of times at the annealing points for each group
-annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
-;
-Temp. at each annealing point, for each group.
-annealing_temp           = 600 500  500  400  400   600   500   500   400   400
-;Pressure
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        = 4
+; List of times at the annealing points (ps).
+annealing_time           = 0 1000 2000 3000
+; Temp. at each annealing point (K).
+annealing_temp           = 600 500 400 300
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, no, berendsen, c-rescale, parrinello-rahman.
 pcoupl                   = no
-tau-p                    = 0.5 {ps}
-compressibility          = 4.5e-5 {bar^-1}
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
+tau-p                    = 5.0 {ps}
+; Reference pressure for the simulation (bar).
 ref-p                    = 1.0 {bar}
-;nsttcouple               = 2
-;Output
-nstxout                  = 00
-nstvout                  = 00
-nstfout                  = 00
-nstlog                   = 500
-nstenergy                = 500
-nstxout-compressed       = 1000
-xtc-precision            = 500
-;nstcalcenergy            = 100
-;
-OPTIONS FOR BONDS
+; Interval between steps that couple the pressure.
+nstpcouple               = 10
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
 continuation             = yes
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
-;
-Type of constraint algorithm
+; Type of constraint algorithm
 constraint-algorithm     = LINCS
-;
-Highest order in the expansion of the constraint coupling matrix
+; Highest order in the expansion of the constraint coupling matrix
 lincs-order              = 4
-;
-Number of iterations in the final step of LINCS. 1 is fine for
-;
-normal simulations, but use 2 to conserve energy in NVE runs.
-;
-For energy minimization with constraints it should be 4 to 8.
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
 lincs-iter               = 1
-;
-Lincs will write a warning to the stderr if in one step a bond
-;
-rotates over more degrees than
-lincs-warnangle          = 45
-;
-Convert harmonic bonds to morse potentials
-morse                    = no
+
+
 #Information for directory name
 T-initial                = 400 {K}
 T-final                  = 400 {K}
 
+; ------- 7-NVT_production Protocol Information  ----------------------------------------------------
+
 [7-NVT_production]
+; RUN CONTROL PARAMETERS
 ;Integrator and main options
-integrator               = md
-emtol                    = 10 {kJ mol-1 nm-1]}
-emstep                   = 0.01 {nm}
+integrator          = md
+emtol               = 1000 {kJ mol^-1 nm^-1]}
+emstep              = 0.01 {nm}
 tinit                    = 0
 dt                       = 0.001 {ps}
-nsteps                   = 82000000
-;Temperature
-tcoupl                   = nose-hoover
-tau-t                    = 0.1 {ps}
-ref-t                    = 400 {K}
-gen-vel                  = no
-gen-temp                 = 400 {K}
-;
-SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
-annealing                = no
-;
-Number of time points to use for specifying annealing in each group
-annealing_npoints        = 10
-;
-List of times at the annealing points for each group
-annealing_time           = 0   1000 4000 5000 10000 11000 12000 15000 16000 21000
-;
-Temp. at each annealing point, for each group.
-annealing_temp           = 600 500  500  400  400   600   500   500   400   400
-;Pressure
-pcoupl                   = no
-tau-p                    = 0.5 {ps}
-compressibility          = 4.5e-5 {bar^-1}
-ref-p                    = 1.0 {bar}
-;nsttcouple               = 2
-;Output
-nstxout                  = 00
-nstvout                  = 00
-nstfout                  = 00
+nsteps                   = 3000000
+; Number of steps for center of mass motion removal.
+nstcomm                  = 10
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            = 10
+
+; OUTPUT CONTROL OPTIONS
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+; Output frequency for log file.
 nstlog                   = 300
-nstenergy                = 300
+; Output frequency for energy file.
+nstenergy                = 1
+; Output frequency and precision for xtc file.
 nstxout-compressed       = 300
-xtc-precision            = 1000
-;nstcalcenergy            = 100
-;
-OPTIONS FOR BONDS
+
+; NEIGHBORSEARCHING PARAMETERS
+; Interval between steps that update the neighbor list.
+nstlist                  = 10
+
+; OPTIONS FOR ELECTROSTATICS AND VDW
+; Method for doing electrostatics.
+coulombtype              = PME
+; Method for doing Van der Waals.
+vdwtype                  = cutoff
+
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
+tcoupl                   = v-rescale
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
+tau-t                    = 1.0 {ps}
+; Reference temperature for the simulation (K).
+ref-t                    = 600 {K}
+; Interval between steps that couple the temperature.
+nsttcouple               = 10
+
+; GENERATE VELOCITIES FOR STARTUP RUN
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
+gen-vel                  = no
+; Temperature for Maxwell distribution (K).
+gen-temp                 = 600
+
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic).
+annealing                = no
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        = 4
+; List of times at the annealing points (ps).
+annealing_time           = 0 1000 2000 3000
+; Temp. at each annealing point (K).
+annealing_temp           = 600 500 400 300
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, no, berendsen, c-rescale, parrinello-rahman.
+pcoupl                   = no
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
+tau-p                    = 5.0 {ps}
+; Reference pressure for the simulation (bar).
+ref-p                    = 1.0 {bar}
+; Interval between steps that couple the pressure.
+nstpcouple               = 10
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
 continuation             = yes
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
-;
-Type of constraint algorithm
+; Type of constraint algorithm
 constraint-algorithm     = LINCS
-;
-Highest order in the expansion of the constraint coupling matrix
+; Highest order in the expansion of the constraint coupling matrix
 lincs-order              = 4
-;
-Number of iterations in the final step of LINCS. 1 is fine for
-;
-normal simulations, but use 2 to conserve energy in NVE runs.
-;
-For energy minimization with constraints it should be 4 to 8.
+; Number of iterations in the final step of LINCS. 1 is fine for
+; normal simulations, but use 2 to conserve energy in NVE runs.
+; For energy minimization with constraints it should be 4 to 8.
 lincs-iter               = 1
-;
-Lincs will write a warning to the stderr if in one step a bond
-;
-rotates over more degrees than
-lincs-warnangle          = 45
-;
-Convert harmonic bonds to morse potentials
-morse                    = no
+
 #Information for directory name
 T-initial                = 400 {K}
 T-final                  = 400 {K}
