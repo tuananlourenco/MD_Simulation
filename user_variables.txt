@@ -1,3 +1,4 @@
+; File prepared for MD_setup-v3-Aug-2025.py version
 ; All information here is only an example. It is your responsability change appropriately
 ; If you have questions about the GROMACS mdp parameters check ---> https://manual.gromacs.org/2024-beta/user-guide/mdp-options.html
 
