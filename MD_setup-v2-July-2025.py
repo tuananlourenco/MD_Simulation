@@ -641,7 +641,7 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
         walltime = config_data.get(pbs_section, 'walltime', fallback='24:00:00')
         ncpus = int(config_data.get(pbs_section, 'ncpus', fallback=1))
         n_openmp = int(config_data.get(pbs_section, 'n_openmp', fallback=1))
-        
+
         topology_name = config_data.get('general', 'topology_name', fallback='TOPOL.TOP')
         print(f"Usando topology_name: {topology_name}")
 
@@ -665,7 +665,7 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
 
         # --- Parte 2: Recalcular nomes dinâmicos necessários ---
         packmol_output_pdb = f"box-{system_name}-{system_size}-species-{salt_concentration}-ratio.pdb"
-        
+
         # Minimização 1
         emtol_em = config_data.get('1-min', 'emtol', fallback='NA')
         emtol_em_str = emtol_em.replace('.', 'p')
@@ -711,36 +711,52 @@ def generate_pbs_jobs(config_data, run_parent_dir, system_name, system_size, sal
 
         # --- Bloco 3: Gerar e Salvar cada Jobfile ---
         # --- Job 1 ---
-        job1_template = f"""#!/bin/bash
-#PBS -N MD1-{jobname}
+        job1_content = """#!/bin/bash
+#PBS -N {jobname}-MD1
 #PBS -e job.md.1.err
 #PBS -o job.md.1.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={ncpus}
+#PBS -l select=1:ncpus={ncpus}:mpiprocs={n_mpi}:ompthreads={n_openmp}
 #PBS -l walltime={walltime}
 
-#EXPORT 
+# PBS Flags Explanation:
+
+# - ncpus defines the total number of cores that you want in your calculation. For example, if you are running on Q20c, you need ncpus=20.
+# - mpiprocs defines the number of mpi process in the job.
+# - ompthreads defines the number of openmp threads in the job.
+#Always check if mpiprocs X ompthreads = ncpus, if this information is not valid your jobfile is wrong and you are using wrong resources.
+
+# - job.md.1.err provides full information about possible errors in the job execution
+# - job.md.1.o contains all the information that was print in the screen when the job was running
+# If you do not understand something here, talk to your colleagues.
+
+##### -------------------------------------------------------------------------------------- #####
+
+##### Here we define and export variables. Only change if you really know what you are doing
 
 export I_MPI_FABRICS=shm
-export OMP_NUM_THREADS={n_openmp}
+NSerial=1
+NPROCS=$(wc -l < $PBS_NODEFILE)
+TOTAL_CORES=$((NPROCS * OMP_NUM_THREADS))
 
-#MODULES LOAD
+##### Here we load the modules necessary to run GROMACS
 
-module load intel/intel_ipp_intel64/2022.1 
-module load intel/intel_ippcp_intel64/2025.1 
-module load intel/mkl/2025.1 
-module load intel/mpi/2021.15 
+module load intel/intel_ipp_intel64/2022.1
+module load intel/intel_ippcp_intel64/2025.1
+module load intel/mkl/2025.1
+module load intel/mpi/2021.15
 module load intel/compiler-intel-llvm/2025.1.0
 
-#GROMASC CPU SOURCE 
+##### Here we load GROMACS from Eniac database. Check if you are loading the correct version
 
 source /dados/softwares/gromacs/bins/GMXRC-CPU
 
-##############################################
+##### -------------------------------------------------------------------------------------- #####
 
 cd "$PBS_O_WORKDIR"
 
-# Job information log
+#####  Job information log, usefull to check if everything is ok within PBS jobfile
+
 {{
 echo "---------------------------------------------"
 echo "Job started at: $(date)"
@@ -754,27 +770,37 @@ echo "Running Node:"
 uniq "$PBS_NODEFILE"
 echo "Complete list of nodes allocated:"
 cat "$PBS_NODEFILE"
-echo "---------------------------------------------"
-}} >> JOB.md.1.out
+echo "############################################################################"
+echo "Check the number of mpi, openMP and cores used in your gmx mdrun calculation"
+echo "Number of mpi = $NPROCS"
+echo "Number of OpenMP = $OMP_NUM_THREADS"
+echo "Total number of cores used in gmx mdrun = $TOTAL_CORES"
+echo "Number of mpi in serial mode - Must be 1 always = $NSerial"
+echo "############################################################################"
 
-# Here the GROMACS part Start
-# Execute GROMACS using mpirun (ensure the binary is executable)
+##### -------------------------------------------------------------------------------------- #####
 
-####################1-min Running########################################################################
+##### Here the GROMACS part Start #####
+
+# Execute GROMACS using MPI combined with OMP, $NPROCS = MPI and OMP_NUM_THREADS = OMP.
+# Remember that gmx_mpi grompp must be executed in serial mode, then -np $NSerial, same for gmx_mpi energy or any other gmx_mpi analysis.
+# gmx_mpi mdrun must be executed in parallel, then -np $NPROCS. There is no need to define OMP, the system already knows.
+
+##### ----------------------------------------1-min Running------------------------------------------ #####
 
 cd {min_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -c ../../BOX/{packmol_output_pdb} -f ../../Protocol_input_files/1-min.mdp -o 1-min
+mpirun -machinefile $PBS_NODEFILE -np $NSerial gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -c ../../BOX/{packmol_output_pdb} -f ../../Protocol_input_files/1-min.mdp -o 1-min
 
-mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 1-min -ntomp {n_openmp} > mdrun.out
+mpirun -machinefile $PBS_NODEFILE -np $NPROCS gmx_mpi mdrun -deffnm 1-min  > mdrun.out
 
-####################Cross-check section########################################################################
+##### ----------------------------------------Cross-check section------------------------------------- #####
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 1-min.edr -o 1-min-potential-energy.xvg -xvg none > 1-min-potential-energy.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Potential' | gmx_mpi energy -f 1-min.edr -o 1-min-potential-energy.xvg -xvg none > 1-min-potential-energy.out
 
 tail -n 8 1-min.log > 1-min-convergence.out
 
-####################Diretories Organization Section########################################################################
+##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 1-min-potential-results
 
@@ -786,23 +812,23 @@ cp *edr *tpr *gro *cpt 1-min-potential-repository/
 
 cd ..
 
-####################2-NVT_thermalization Running########################################################################
+##### ----------------------------------------2-NVT_thermalization Running---------------------------- #####
 
 cd {nvt_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/2-NVT_thermalization.mdp -c ../{min_dir_name}/1-min.gro -o 2-NVT_thermalization
+mpirun -machinefile $PBS_NODEFILE -np $NSerial gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/2-NVT_thermalization.mdp -c ../{min_dir_name}/1-min.gro -o 2-NVT_thermalization
 
-mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 2-NVT_thermalization -ntomp {n_openmp} > mdrun.out
+mpirun -machinefile $PBS_NODEFILE -np $NPROCS gmx_mpi mdrun -deffnm 2-NVT_thermalization > mdrun.out
 
-####################Cross-check section######################################################################## 
+##### ----------------------------------------Cross-check section------------------------------------- #####
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-potential-energy.xvg -xvg none > 2-NVT_thermalization-potential-energy.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Potential' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-potential-energy.xvg -xvg none > 2-NVT_thermalization-potential-energy.out
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-total-energy.xvg -xvg none > 2-NVT_thermalization-total-energy.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-temperature.xvg -xvg none > 2-NVT_thermalization-temperature.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Temperature' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-temperature.xvg -xvg none > 2-NVT_thermalization-temperature.out
 
-####################Diretories Organization Section########################################################################
+##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 2-NVT_thermalization-results
 
@@ -814,27 +840,27 @@ cp *edr *tpr *gro *cpt 2-NVT_thermalization-repository/
 
 cd ..
 
-####################3-NPT_ergodicity Running########################################################################
+##### ----------------------------------------3-NPT_ergodicity Running-------------------------------- #####
 
 cd {npt3_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/3-NPT_ergodicity.mdp -c ../{nvt_dir_name}/2-NVT_thermalization.gro -o 3-NPT_ergodicity
+mpirun -machinefile $PBS_NODEFILE -np $NSerial gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/3-NPT_ergodicity.mdp -c ../{nvt_dir_name}/2-NVT_thermalization.gro -o 3-NPT_ergodicity
 
-mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 3-NPT_ergodicity -ntomp {n_openmp} > mdrun.out
+mpirun -machinefile $PBS_NODEFILE -np $NPROCS gmx_mpi mdrun -deffnm 3-NPT_ergodicity  > mdrun.out
 
-####################Cross-check section######################################################################## 
+##### ----------------------------------------Cross-check section------------------------------------- #####
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-potential-energy.xvg -xvg none > 3-NPT_ergodicity-potential-energy.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Potential' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-potential-energy.xvg -xvg none > 3-NPT_ergodicity-potential-energy.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-total-energy.xvg -xvg none > 3-NPT_ergodicity-total-energy.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Total-Energy' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-total-energy.xvg -xvg none > 3-NPT_ergodicity-total-energy.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-temperature.xvg -xvg none > 3-NPT_ergodicity-temperature.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Temperature' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-temperature.xvg -xvg none > 3-NPT_ergodicity-temperature.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Density' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-density.xvg -xvg none > 3-NPT_ergodicity-density.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Density' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-density.xvg -xvg none > 3-NPT_ergodicity-density.out
 
-mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Volume' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-volume.xvg -xvg none > 3-NPT_ergodicity-volume.out
+mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Volume' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-volume.xvg -xvg none > 3-NPT_ergodicity-volume.out
 
-####################Diretories Organization Section########################################################################
+##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 3-NPT_ergodicity-results
 
@@ -846,42 +872,63 @@ cp *edr *tpr *gro *cpt 3-NPT_ergodicity-repository/
 
 date >> ../JOB.md.1.out
 """
+        job1_template = job1_content.format(
+            jobname=jobname, queue=queue, ncpus=ncpus, n_mpi=n_mpi, n_openmp=n_openmp, walltime=walltime,
+            min_dir_name=min_dir_name, topology_name=topology_name, packmol_output_pdb=packmol_output_pdb,
+            nvt_dir_name=nvt_dir_name, npt3_dir_name=npt3_dir_name
+        )
         output_path1 = os.path.join(run_parent_dir, "job.md.1")
         with open(output_path1, 'w') as f:
             f.write(job1_template)
         print(f"Arquivo de job 'job.md.1' gerado com sucesso em: '{output_path1}'")
 
         # --- Job 2 ---
-        job2_template = f"""#!/bin/bash
-#PBS -N MD2-{jobname}
+        job2_content = """#!/bin/bash
+#PBS -N {jobname}-MD2
 #PBS -e job.md.2.err
 #PBS -o job.md.2.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={ncpus}
+#PBS -l select=1:ncpus={ncpus}:mpiprocs={n_mpi}:ompthreads={n_openmp}
 #PBS -l walltime={walltime}
 
-#EXPORT 
+# PBS Flags Explanation:
+
+# - ncpus defines the total number of cores that you want in your calculation. For example, if you are running on Q20c, you need ncpus=20.
+# - mpiprocs defines the number of mpi process in the job.
+# - ompthreads defines the number of openmp threads in the job.
+#Always check if mpiprocs X ompthreads = ncpus, if this information is not valid your jobfile is wrong and you are using wrong resources.
+
+# - job.md.2.err provides full information about possible errors in the job execution
+# - job.md.2.o contains all the information that was print in the screen when the job was running
+# If you do not understand something here, talk to your colleagues.
+
+##### -------------------------------------------------------------------------------------- #####
+
+##### Here we define and export variables. Only change if you really know what you are doing
 
 export I_MPI_FABRICS=shm
-export OMP_NUM_THREADS={n_openmp}
+NSerial=1
+NPROCS=$(wc -l < $PBS_NODEFILE)
+TOTAL_CORES=$((NPROCS * OMP_NUM_THREADS))
 
-#MODULES LOAD
+##### Here we load the modules necessary to run GROMACS
 
-module load intel/intel_ipp_intel64/2022.1 
-module load intel/intel_ippcp_intel64/2025.1 
-module load intel/mkl/2025.1 
-module load intel/mpi/2021.15 
+module load intel/intel_ipp_intel64/2022.1
+module load intel/intel_ippcp_intel64/2025.1
+module load intel/mkl/2025.1
+module load intel/mpi/2021.15
 module load intel/compiler-intel-llvm/2025.1.0
 
-#GROMASC CPU SOURCE 
+##### Here we load GROMACS from Eniac database. Check if you are loading the correct version
 
 source /dados/softwares/gromacs/bins/GMXRC-CPU
 
-##############################################
+##### -------------------------------------------------------------------------------------- #####
 
 cd "$PBS_O_WORKDIR"
 
-# Job information log
+#####  Job information log, usefull to check if everything is ok within PBS jobfile
+
 {{
 echo "---------------------------------------------"
 echo "Job started at: $(date)"
@@ -895,21 +942,31 @@ echo "Running Node:"
 uniq "$PBS_NODEFILE"
 echo "Complete list of nodes allocated:"
 cat "$PBS_NODEFILE"
-echo "---------------------------------------------"
-}} >> JOB.md.1.out
+echo "############################################################################"
+echo "Check the number of mpi, openMP and cores used in your gmx mdrun calculation"
+echo "Number of mpi = $NPROCS"
+echo "Number of OpenMP = $OMP_NUM_THREADS"
+echo "Total number of cores used in gmx mdrun = $TOTAL_CORES"
+echo "Number of mpi in serial mode - Must be 1 always = $NSerial"
+echo "############################################################################"
 
-# Here the GROMACS part Start
-# Execute GROMACS using mpirun (ensure the binary is executable)
+##### -------------------------------------------------------------------------------------- #####
 
-####################4-NPT_equilibration Running########################################################################
+##### Here the GROMACS part Start #####
+
+# Execute GROMACS using MPI combined with OMP, $NPROCS = MPI and OMP_NUM_THREADS = OMP.
+# Remember that gmx_mpi grompp must be executed in serial mode, then -np $NSerial, same for gmx_mpi energy or any other gmx_mpi analysis.
+# gmx_mpi mdrun must be executed in parallel, then -np $NPROCS. There is no need to define OMP, the system already knows.
+
+##### ----------------------------------------3-NPT_equilibration Running-------------------------------- #####
 
 cd {npt4_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/4-NPT_equilibration.mdp -c ../{npt3_dir_name}/3-NPT_ergodicity.gro -o 4-NPT_equilibration
+mpirun -machinefile $PBS_NODEFILE -np $NSerial gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/4-NPT_equilibration.mdp -c ../{npt3_dir_name}/3-NPT_ergodicity.gro -o 4-NPT_equilibration
 
-mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 4-NPT_equilibration -ntomp {n_openmp} > mdrun.out
+mpirun -machinefile $PBS_NODEFILE -np $NPROCS gmx_mpi mdrun -deffnm 4-NPT_equilibration  > mdrun.out
 
-####################Cross-check section######################################################################## 
+##### ----------------------------------------Cross-check section------------------------------------- #####
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str} -o 4-NPT_equilibration-potential-energy.xvg -xvg none > 4-NPT_equilibration-potential-energy.out
 
@@ -921,7 +978,7 @@ mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Density' | gmx_mpi energy -f 4-NPT
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Volume' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str}  -o 4-NPT_equilibration-volume.xvg -xvg none > 4-NPT_equilibration-volume.out
 
-####################Diretories Organization Section########################################################################
+##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 4-NPT_equilibration-results
 
@@ -933,6 +990,11 @@ cp *edr *tpr *gro *cpt 4-NPT_equilibration-repository/
 
 date >> ../JOB.md.2.out
 """
+        job2_template = job2_content.format(
+            jobname=jobname, queue=queue, ncpus=ncpus, n_mpi=n_mpi, n_openmp=n_openmp, walltime=walltime,
+            npt4_dir_name=npt4_dir_name, topology_name=topology_name, npt3_dir_name=npt3_dir_name,
+            half_nsteps_ps_npt4_str=half_nsteps_ps_npt4_str
+        )
         output_path2 = os.path.join(run_parent_dir, "job.md.2")
         with open(output_path2, 'w') as f:
             f.write(job2_template)
@@ -940,36 +1002,52 @@ date >> ../JOB.md.2.out
 
         # --- Job 3 ---
         if nvt6_dir_name:
-            job3_template = f"""#!/bin/bash
-#PBS -N MD3-{jobname}
+            job3_content = """#!/bin/bash
+#PBS -N {jobname}-MD3
 #PBS -e job.md.3.err
 #PBS -o job.md.3.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={ncpus}
+#PBS -l select=1:ncpus={ncpus}:mpiprocs={n_mpi}:ompthreads={n_openmp}
 #PBS -l walltime={walltime}
 
-#EXPORT 
+# PBS Flags Explanation:
+
+# - ncpus defines the total number of cores that you want in your calculation. For example, if you are running on Q20c, you need ncpus=20.
+# - mpiprocs defines the number of mpi process in the job.
+# - ompthreads defines the number of openmp threads in the job.
+#Always check if mpiprocs X ompthreads = ncpus, if this information is not valid your jobfile is wrong and you are using wrong resources.
+
+# - job.md.3.err provides full information about possible errors in the job execution
+# - job.md.3.o contains all the information that was print in the screen when the job was running
+# If you do not understand something here, talk to your colleagues.
+
+##### -------------------------------------------------------------------------------------- #####
+
+##### Here we define and export variables. Only change if you really know what you are doing
 
 export I_MPI_FABRICS=shm
-export OMP_NUM_THREADS={n_openmp}
+NSerial=1
+NPROCS=$(wc -l < $PBS_NODEFILE)
+TOTAL_CORES=$((NPROCS * OMP_NUM_THREADS))
 
-#MODULES LOAD
+##### Here we load the modules necessary to run GROMACS
 
-module load intel/intel_ipp_intel64/2022.1 
-module load intel/intel_ippcp_intel64/2025.1 
-module load intel/mkl/2025.1 
-module load intel/mpi/2021.15 
+module load intel/intel_ipp_intel64/2022.1
+module load intel/intel_ippcp_intel64/2025.1
+module load intel/mkl/2025.1
+module load intel/mpi/2021.15
 module load intel/compiler-intel-llvm/2025.1.0
 
-#GROMASC CPU SOURCE 
+##### Here we load GROMACS from Eniac database. Check if you are loading the correct version
 
 source /dados/softwares/gromacs/bins/GMXRC-CPU
 
-##############################################
+##### -------------------------------------------------------------------------------------- #####
 
 cd "$PBS_O_WORKDIR"
 
-# Job information log
+#####  Job information log, usefull to check if everything is ok within PBS jobfile
+
 {{
 echo "---------------------------------------------"
 echo "Job started at: $(date)"
@@ -983,21 +1061,31 @@ echo "Running Node:"
 uniq "$PBS_NODEFILE"
 echo "Complete list of nodes allocated:"
 cat "$PBS_NODEFILE"
-echo "---------------------------------------------"
-}} >> JOB.md.1.out
+echo "############################################################################"
+echo "Check the number of mpi, openMP and cores used in your gmx mdrun calculation"
+echo "Number of mpi = $NPROCS"
+echo "Number of OpenMP = $OMP_NUM_THREADS"
+echo "Total number of cores used in gmx mdrun = $TOTAL_CORES"
+echo "Number of mpi in serial mode - Must be 1 always = $NSerial"
+echo "############################################################################"
 
-# Here the GROMACS part Start
-# Execute GROMACS using mpirun (ensure the binary is executable)
+##### -------------------------------------------------------------------------------------- #####
 
-####################6-NVT_re-equilibrium Running########################################################################
+##### Here the GROMACS part Start #####
+
+# Execute GROMACS using MPI combined with OMP, $NPROCS = MPI and OMP_NUM_THREADS = OMP.
+# Remember that gmx_mpi grompp must be executed in serial mode, then -np $NSerial, same for gmx_mpi energy or any other gmx_mpi analysis.
+# gmx_mpi mdrun must be executed in parallel, then -np $NPROCS. There is no need to define OMP, the system already knows.
+
+##### ----------------------------------------6-NVT_re-equilibrium Running---------------------------- #####
 
 cd {nvt6_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/6-NVT_re-equilibrium.mdp -c ../{npt4_dir_name}/4-NPT_equilibration.gro -o 6-NVT_re-equilibrium
+mpirun -machinefile $PBS_NODEFILE -np $NSerial gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/6-NVT_re-equilibrium.mdp -c ../{npt4_dir_name}/4-NPT_equilibration.gro -o 6-NVT_re-equilibrium
 
-mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 6-NVT_re-equilibrium -ntomp {n_openmp} > mdrun.out
+mpirun -machinefile $PBS_NODEFILE -np $NPROCS gmx_mpi mdrun -deffnm 6-NVT_re-equilibrium  > mdrun.out
 
-####################Cross-check section######################################################################## 
+##### ----------------------------------------Cross-check section------------------------------------- #####
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 6-NVT_re-equilibrium.edr -o 6-NVT_re-equilibrium-potential-energy.xvg -xvg none > 6-NVT_re-equilibrium-potential-energy.out
 
@@ -1005,7 +1093,7 @@ mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 6-NVT_re-equilibrium.edr -o 6-NVT_re-equilibrium-temperature.xvg -xvg none > 6-NVT_re-equilibrium-temperature.out
 
-####################Diretories Organization Section########################################################################
+##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 6-NVT_re-equilibrium-results
 
@@ -1017,42 +1105,62 @@ cp *edr *tpr *gro *cpt 6-NVT_re-equilibrium-repository/
 
 date >> ../JOB.md.3.out
 """
+            job3_template = job3_content.format(
+                jobname=jobname, queue=queue, ncpus=ncpus, n_mpi=n_mpi, n_openmp=n_openmp, walltime=walltime,
+                nvt6_dir_name=nvt6_dir_name, topology_name=topology_name, npt4_dir_name=npt4_dir_name
+            )
             output_path3 = os.path.join(run_parent_dir, "job.md.3")
             with open(output_path3, 'w') as f:
                 f.write(job3_template)
             print(f"Arquivo de job 'job.md.3' gerado com sucesso em: '{output_path3}'")
 
             # --- Job 4 ---
-            job4_template = f"""#!/bin/bash
-#PBS -N MD4-{jobname}
+            job4_content = """#!/bin/bash
+#PBS -N {jobname}-MD4
 #PBS -e job.md.4.err
 #PBS -o job.md.4.o
 #PBS -q {queue}
-#PBS -l select=1:ncpus={ncpus}
+#PBS -l select=1:ncpus={ncpus}:mpiprocs={n_mpi}:ompthreads={n_openmp}
 #PBS -l walltime={walltime}
 
-#EXPORT 
+# PBS Flags Explanation:
+
+# - ncpus defines the total number of cores that you want in your calculation. For example, if you are running on Q20c, you need ncpus=20.
+# - mpiprocs defines the number of mpi process in the job.
+# - ompthreads defines the number of openmp threads in the job.
+#Always check if mpiprocs X ompthreads = ncpus, if this information is not valid your jobfile is wrong and you are using wrong resources.
+
+# - job.md.4.err provides full information about possible errors in the job execution
+# - job.md.4.o contains all the information that was print in the screen when the job was running
+# If you do not understand something here, talk to your colleagues.
+
+##### -------------------------------------------------------------------------------------- #####
+
+##### Here we define and export variables. Only change if you really know what you are doing
 
 export I_MPI_FABRICS=shm
-export OMP_NUM_THREADS={n_openmp}
+NSerial=1
+NPROCS=$(wc -l < $PBS_NODEFILE)
+TOTAL_CORES=$((NPROCS * OMP_NUM_THREADS))
 
-#MODULES LOAD
+##### Here we load the modules necessary to run GROMACS
 
-module load intel/intel_ipp_intel64/2022.1 
-module load intel/intel_ippcp_intel64/2025.1 
-module load intel/mkl/2025.1 
-module load intel/mpi/2021.15 
+module load intel/intel_ipp_intel64/2022.1
+module load intel/intel_ippcp_intel64/2025.1
+module load intel/mkl/2025.1
+module load intel/mpi/2021.15
 module load intel/compiler-intel-llvm/2025.1.0
 
-#GROMASC CPU SOURCE 
+##### Here we load GROMACS from Eniac database. Check if you are loading the correct version
 
 source /dados/softwares/gromacs/bins/GMXRC-CPU
 
-##############################################
+##### -------------------------------------------------------------------------------------- #####
 
 cd "$PBS_O_WORKDIR"
 
-# Job information log
+#####  Job information log, usefull to check if everything is ok within PBS jobfile
+
 {{
 echo "---------------------------------------------"
 echo "Job started at: $(date)"
@@ -1066,21 +1174,31 @@ echo "Running Node:"
 uniq "$PBS_NODEFILE"
 echo "Complete list of nodes allocated:"
 cat "$PBS_NODEFILE"
-echo "---------------------------------------------"
-}} >> JOB.md.1.out
+echo "############################################################################"
+echo "Check the number of mpi, openMP and cores used in your gmx mdrun calculation"
+echo "Number of mpi = $NPROCS"
+echo "Number of OpenMP = $OMP_NUM_THREADS"
+echo "Total number of cores used in gmx mdrun = $TOTAL_CORES"
+echo "Number of mpi in serial mode - Must be 1 always = $NSerial"
+echo "############################################################################"
 
-# Here the GROMACS part Start
-# Execute GROMACS using mpirun (ensure the binary is executable)
+##### -------------------------------------------------------------------------------------- #####
 
-####################7-NVT_production Running########################################################################
+##### Here the GROMACS part Start #####
+
+# Execute GROMACS using MPI combined with OMP, $NPROCS = MPI and OMP_NUM_THREADS = OMP.
+# Remember that gmx_mpi grompp must be executed in serial mode, then -np $NSerial, same for gmx_mpi energy or any other gmx_mpi analysis.
+# gmx_mpi mdrun must be executed in parallel, then -np $NPROCS. There is no need to define OMP, the system already knows.
+
+##### ----------------------------------------6-NVT_production Running---------------------------- #####
 
 cd {nvt7_dir_name}
 
-mpirun -machinefile $PBS_NODEFILE -np 1 gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/7-NVT_production.mdp -c ../{nvt6_dir_name}/6-NVT_re-equilibrium.gro -o 7-NVT_production
+mpirun -machinefile $PBS_NODEFILE -np $NSerial gmx_mpi grompp -p ../../Force_Field_input_files/{topology_name} -f ../../Protocol_input_files/7-NVT_production.mdp -c ../{nvt6_dir_name}/6-NVT_re-equilibrium.gro -o 7-NVT_production
 
-mpirun -machinefile $PBS_NODEFILE -np {n_mpi} gmx_mpi mdrun -deffnm 7-NVT_production -ntomp {n_openmp} > mdrun.out
+mpirun -machinefile $PBS_NODEFILE -np $NPROCS gmx_mpi mdrun -deffnm 7-NVT_production  > mdrun.out
 
-####################Cross-check section########################################################################
+##### ----------------------------------------Cross-check section------------------------------------- #####
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Potential' | gmx_mpi energy -f 7-NVT_production.edr -o 7-NVT_production-potential-energy.xvg -xvg none > 7-NVT_production-potential-energy.out
 
@@ -1089,7 +1207,7 @@ mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 7-NVT_production.edr -o 7-NVT_production-temperature.xvg -xvg none > 7-NVT_production-temperature.out
 
 
-####################Diretories Organization Section########################################################################
+##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 7-NVT_production-results
 
@@ -1101,6 +1219,11 @@ cp *edr *tpr *gro *cpt 7-NVT_production-repository/
 
 date >> ../JOB.md.4.out
 """
+            job4_template = job4_content.format(
+                jobname=jobname, queue=queue, ncpus=ncpus, n_mpi=n_mpi, n_openmp=n_openmp, walltime=walltime,
+                nvt7_dir_name=nvt7_dir_name, topology_name=topology_name, nvt6_dir_name=nvt6_dir_name
+            )
+
             output_path4 = os.path.join(run_parent_dir, "job.md.4")
             with open(output_path4, 'w') as f:
                 f.write(job4_template)
