@@ -1,97 +1,121 @@
 ; RUN CONTROL PARAMETERS
-integrator               = 
-; Start time and timestep in ps
-tinit                    = 
-dt                       = 
-nsteps                   = 
-; Energy Minimization Stuff
-emtol                    = 
-emstep                   = 
-niter                    = 20
-nbfgscorr                = 10
-nstcgsteep               = 1000
+; Simulation integrator for Newton or algorithm for EM.
+integrator               =
+; Start time for the MD simulation (ps). In general we use 0 unless is a continuation.
+tinit                    =
+; Timestep (ps).
+dt                       =
+; Number of steps (unitless). Remember that nsteps X dt = Simulation total time.
+nsteps                   =
 
-; mode for center of mass motion removal
+; Energy Minimization Stuff
+; Energy tolerance for convergence criteria.
+emtol                    =
+; EM stepsize (nm).
+emstep                   =
+
+; Mode for center of mass motion removal
 comm-mode                = Linear
-; number of steps for center of mass motion removal
-nstcomm                  = 100
-;nstcalcenergy            = 
+; Number of steps for center of mass motion removal.
+nstcomm                  =
+; Number of steps that elapse between calculating the energies.
+nstcalcenergy            =
 
 ; OUTPUT CONTROL OPTIONS
-; Output frequency for coords (x), velocities (v) and forces (f)
+; Output frequency for coords (x), velocities (v) and forces (f). This can generate large files.
 nstxout                  = 
 nstvout                  = 
 nstfout                  = 
-; Output frequency for energies to log file and energy file
+; Output frequency for log file.
 nstlog                   = 
+; Output frequency for energy file.
 nstenergy                = 
-; Output frequency and precision for xtc file
-nstxout-compressed       =  
-xtc-precision            = 
+; Output frequency for xtc file.
+nstxout-compressed       = 
 
 ; NEIGHBORSEARCHING PARAMETERS
-; nblist update frequency
+; nblist update frequency.
 cutoff-scheme            = verlet
-nstlist                  = 10
-; ns algorithm (simple or grid)
-ns-type                  = grid
-; Periodic boundary conditions: xyz (default), no (vacuum)
-; or full (infinite systems only)
+; Interval between steps that update the neighbor list.
+nstlist                  = 
+; Cut-off distance for the short-range neighbor list.
+rlist                    =
+; Maximum allowed error for pair interactions per particle caused by the Verlet buffer. Indirectly sets rlist.
+verlet-buffer-tolerance  = 0.005
+
+; Periodic boundary conditions: xyz (default), no (vacuum).
 pbc                      = xyz
-rlist                    = 
 
 ; OPTIONS FOR ELECTROSTATICS AND VDW
-; Method for doing electrostatics
+; Method for doing electrostatics.
 coulombtype              = PME
+; Distance for the Coulomb cut-off (nm).
 rcoulomb                 = 
-; Method for doing Van der Waals
+; Method for doing Van der Waals.
 vdwtype                  = cutoff
+; Distance for the van der Waals cut-off (nm).
 rvdw                     = 
-; Apply long range dispersion corrections for Energy and Pressure
+; Apply long range dispersion corrections for Energy and Pressure.
 DispCorr                 = EnerPres
+
+; EWALD/PME/PPPM parameters
+; Number of grid points along a dimension to which a charge is mapped.
+pme_order                = 4
+; Relative strength of the Ewald-shifted direct potential at rcoulomb.
+ewald_rtol               = 1e-05
+; Ewald geometry. For slabs maybe you need 3dc.
+ewald_geometry           = 3d
 ; Spacing for the PME/PPPM FFT grid
 fourierspacing           = 0.15
-; EWALD/PME/PPPM parameters
-pme_order                = 4
-ewald_rtol               = 1e-05
-ewald_geometry           = 3d
-epsilon_surface          = 0
 
-; OPTIONS FOR WEAK COUPLING ALGORITHMS
-; Temperature coupling  
+; OPTIONS FOR TEMPERATURE CONTROL AND ENSEMBLE SETTING
+; Thermostat algorithm, no, v-rescale, nose-hoover.
 tcoupl                   = 
-; Groups to couple separately
-tc-grps                  = System ;
-; Time constant (ps) and reference temperature (K)
+; Groups to couple separately.
+tc-grps                  = System
+; Time constant for temperature coupling (ps).
 tau-t                    =  
+; Reference temperature for the simulation (K).
 ref-t                    = 
-; Pressure coupling     
-pcoupl                   =
-Pcoupltype               = Isotropic
-; Time constant (ps), compressibility (1/bar) and reference P (bar)
-tau-p                    =  
-compressibility          = 
-ref-p                    = 
-;nsttcouple               = 
-
-; SIMULATED ANNEALING
-; Type of annealing for each temperature group (no/single/periodic)
-annealing                = 
-; Number of time points to use for specifying annealing in each group
-annealing_npoints        = 
-; List of times at the annealing points for each group
-annealing_time           = 
-; Temp. at each annealing point, for each group.
-annealing_temp           = 
-
-
+; Interval between steps that couple the temperature.
+nsttcouple               =
 
 ; GENERATE VELOCITIES FOR STARTUP RUN
-gen-vel                  = 
-gen-temp                 = 
+; If yes initial velocities will be obtained by Maxwell distribution at temperature gen-temp.
+gen-vel                  =
+; Temperature for Maxwell distribution (K).
+gen-temp                 =
+; Seed to initialize random generator for velocities, when gen-seed = -1, a pseudo random seed is used.
+gen-seed                 = -1
 
-; OPTIONS FOR BONDS
+; SIMULATED ANNEALING
+; Type of annealing for each temperature group (no/single/periodic).
+annealing                =
+; Number of time points to use for specifying annealing in each group.
+annealing_npoints        =
+; List of times at the annealing points (ps).
+annealing_time           =
+; Temp. at each annealing point.
+annealing_temp           =
+
+; OPTIONS FOR PRESSURE CONTROL AND ENSEMBLE SETTING
+; Barosthat algorithm, berendsen, c-rescale, parrinello-rahman.
+pcoupl                   =
+; Specifies the kind of isotropy of the pressure coupling used.
+Pcoupltype               = Isotropic
+;Time constant for pressure coupling (ps).
+tau-p                    =  
+; Compressibility (1/bar), we use the value for water at 300K and 1 atm.
+compressibility          = 4.5e-5
+; Reference pressure for the simulation (bar).
+ref-p                    = 
+; Interval between steps that couple the pressure.
+nsttcouple               =
+
+; OPTIONS FOR CONSTRAINTS
+; Is this the first time using constraint in these simulations? (yes or no)
 continuation             = 
+; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = 
 ; Type of constraint algorithm
 constraint-algorithm     = 
@@ -103,7 +127,7 @@ lincs-order              =
 lincs-iter               = 
 ; Lincs will write a warning to the stderr if in one step a bond
 ; rotates over more degrees than
-lincs-warnangle          = 
+lincs-warnangle          = 30 
 ; Convert harmonic bonds to morse potentials
 morse                    = no
 
