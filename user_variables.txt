@@ -132,7 +132,7 @@ nstpcouple               = 10
 
 ; OPTIONS FOR CONSTRAINTS
 ; Is this the first time using constraint in these simulations? (yes or no)
-continuation             = no
+ation             = no
 ; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
 ; Type of constraint algorithm
@@ -228,7 +228,7 @@ nstpcouple               = 10
 
 ; OPTIONS FOR CONSTRAINTS
 ; Is this the first time using constraint in these simulations? (yes or no)
-continuation             = yes
+continuation             = no
 ; Controls which bonds in the topology will be converted to rigid holonomic constraints.
 constraints              = h-bonds
 ; Type of constraint algorithm
