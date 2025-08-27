@@ -800,6 +800,10 @@ mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Potential' | gmx_mpi energy
 
 tail -n 8 1-min.log > 1-min-convergence.out
 
+echo 'Check mpi and openmp used in the calculation:' >> mdrun.out
+grep 'MPI processes' 1-min.log >> mdrun.out
+grep 'OpenMP threads per'  1-min.log >> mdrun.out
+
 ##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 1-min-potential-results
@@ -827,6 +831,10 @@ mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Potential' | gmx_mpi energy
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-total-energy.xvg -xvg none > 2-NVT_thermalization-total-energy.out
 
 mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Temperature' | gmx_mpi energy -f 2-NVT_thermalization.edr -o 2-NVT_thermalization-temperature.xvg -xvg none > 2-NVT_thermalization-temperature.out
+
+echo 'Check mpi and openmp used in the calculation:' >> mdrun.out
+grep 'MPI processes' 2-NVT_thermalization.log >> mdrun.out
+grep 'OpenMP threads per'  2-NVT_thermalization.log >> mdrun.out
 
 ##### ----------------------------------------Diretories Organization Section------------------------- #####
 
@@ -859,6 +867,10 @@ mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Temperature' | gmx_mpi ener
 mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Density' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-density.xvg -xvg none > 3-NPT_ergodicity-density.out
 
 mpirun -machinefile $PBS_NODEFILE -np $NSerial echo 'Volume' | gmx_mpi energy -f 3-NPT_ergodicity.edr -o 3-NPT_ergodicity-volume.xvg -xvg none > 3-NPT_ergodicity-volume.out
+
+echo 'Check mpi and openmp used in the calculation:' >> mdrun.out
+grep 'MPI processes' 3-NPT_ergodicity.log >> mdrun.out
+grep 'OpenMP threads per'  3-NPT_ergodicity.log >> mdrun.out
 
 ##### ----------------------------------------Diretories Organization Section------------------------- #####
 
@@ -978,6 +990,10 @@ mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Density' | gmx_mpi energy -f 4-NPT
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Volume' | gmx_mpi energy -f 4-NPT_equilibration.edr -b {half_nsteps_ps_npt4_str}  -o 4-NPT_equilibration-volume.xvg -xvg none > 4-NPT_equilibration-volume.out
 
+echo 'Check mpi and openmp used in the calculation:' >> mdrun.out
+grep 'MPI processes' 4-NPT_equilibration.log >> mdrun.out
+grep 'OpenMP threads per'  4-NPT_equilibration.log >> mdrun.out
+
 ##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 4-NPT_equilibration-results
@@ -1093,6 +1109,10 @@ mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 6-NVT_re-equilibrium.edr -o 6-NVT_re-equilibrium-temperature.xvg -xvg none > 6-NVT_re-equilibrium-temperature.out
 
+echo 'Check mpi and openmp used in the calculation:' >> mdrun.out
+grep 'MPI processes' 6-NVT_re-equilibrium.log >> mdrun.out
+grep 'OpenMP threads per'  6-NVT_re-equilibrium.log >> mdrun.out
+
 ##### ----------------------------------------Diretories Organization Section------------------------- #####
 
 mkdir 6-NVT_re-equilibrium-results
@@ -1206,6 +1226,9 @@ mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Total-Energy' | gmx_mpi energy -f 
 
 mpirun -machinefile $PBS_NODEFILE -np 1 echo 'Temperature' | gmx_mpi energy -f 7-NVT_production.edr -o 7-NVT_production-temperature.xvg -xvg none > 7-NVT_production-temperature.out
 
+echo 'Check mpi and openmp used in the calculation:' >> mdrun.out
+grep 'MPI processes' 7-NVT_production.log >> mdrun.out
+grep 'OpenMP threads per'  7-NVT_production.log >> mdrun.out
 
 ##### ----------------------------------------Diretories Organization Section------------------------- #####
 
