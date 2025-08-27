@@ -110,7 +110,7 @@ compressibility          = 4.5e-5
 ; Reference pressure for the simulation (bar).
 ref-p                    = 
 ; Interval between steps that couple the pressure.
-nsttcouple               =
+nstpcouple               =
 
 ; OPTIONS FOR CONSTRAINTS
 ; Is this the first time using constraint in these simulations? (yes or no)
